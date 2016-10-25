@@ -5,7 +5,7 @@ import ModalTypes from 'constants/ModalTypes';
 
 const cancelReservationEdit = createAction(types.UI.CANCEL_RESERVATION_EDIT);
 
-const changeAdminReservationsFilters = createAction(types.UI.CHANGE_ADMIN_RESERVATIONS_FILTERS);
+const changeAdminReservationFilters = createAction(types.UI.CHANGE_ADMIN_RESERVATIONS_FILTERS);
 
 const changeSearchFilters = createAction(types.UI.CHANGE_SEARCH_FILTERS);
 
@@ -19,6 +19,11 @@ const closeConfirmReservationModal = createAction(
 const closeReservationCancelModal = createAction(
   types.UI.CLOSE_MODAL,
   () => ModalTypes.RESERVATION_CANCEL
+);
+
+const closeReservationCommentModal = createAction(
+  types.UI.CLOSE_MODAL,
+  () => ModalTypes.RESERVATION_COMMENT
 );
 
 const closeReservationInfoModal = createAction(
@@ -39,6 +44,11 @@ const openConfirmReservationModal = createAction(
 const openReservationCancelModal = createAction(
   types.UI.OPEN_MODAL,
   () => ModalTypes.RESERVATION_CANCEL
+);
+
+const openReservationCommentModal = createAction(
+  types.UI.OPEN_MODAL,
+  () => ModalTypes.RESERVATION_COMMENT
 );
 
 const openReservationInfoModal = createAction(
@@ -62,15 +72,17 @@ const toggleTimeSlot = createAction(types.UI.TOGGLE_TIME_SLOT);
 
 export {
   cancelReservationEdit,
-  changeAdminReservationsFilters,
+  changeAdminReservationFilters,
   changeSearchFilters,
   clearReservations,
   closeConfirmReservationModal,
   closeReservationCancelModal,
+  closeReservationCommentModal,
   closeReservationInfoModal,
   closeReservationSuccessModal,
   openConfirmReservationModal,
   openReservationCancelModal,
+  openReservationCommentModal,
   openReservationInfoModal,
   selectReservationToCancel,
   selectReservationToEdit,

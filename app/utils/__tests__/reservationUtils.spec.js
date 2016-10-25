@@ -3,7 +3,7 @@ import MockDate from 'mockdate';
 import moment from 'moment';
 
 import constants from 'constants/AppConstants';
-import Reservation from 'fixtures/Reservation';
+import Reservation from 'utils/fixtures/Reservation';
 import {
   combine,
   isStaffEvent,
@@ -62,7 +62,7 @@ describe('Utils: reservationUtils', () => {
       expect(combine(reservations)).to.deep.equal(expected);
     });
 
-    it('should not combine two reservations if they are not continual', () => {
+    it('does not combine two reservations if they are not continual', () => {
       const reservations = [slots[0], slots[2]];
 
       expect(combine(reservations)).to.deep.equal(reservations);

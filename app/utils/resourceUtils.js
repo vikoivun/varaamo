@@ -1,9 +1,11 @@
 import filter from 'lodash/filter';
 import forEach from 'lodash/forEach';
 import moment from 'moment';
+import queryString from 'query-string';
 
 import constants from 'constants/AppConstants';
 import { getCurrentReservation, getNextAvailableTime } from 'utils/reservationUtils';
+import { getProperty } from 'utils/translationUtils';
 
 function isOpenNow(resource) {
   const { closes, opens } = getOpeningHours(resource);
@@ -81,7 +83,7 @@ function getHumanizedPeriod(period) {
   if (!period) {
     return '';
   }
-  return `${moment.duration(period).hours()}h`;
+  return `${moment.duration(period).hours()} h`;
 }
 
 function getOpeningHours(resource) {
@@ -101,11 +103,26 @@ function getOpenReservations(resource) {
   ));
 }
 
-function getPeopleCapacityString(capacity) {
-  if (!capacity) {
+function getResourcePageUrl(resource, date, time) {
+  if (!resource || !resource.id) {
     return '';
   }
-  return `max ${capacity} hengelle.`;
+  const pathname = `/resources/${resource.id}`;
+  const query = queryString.stringify({
+    date: date ? date.split('T')[0] : undefined,
+    time,
+  });
+  return query ? `${pathname}?${query}` : pathname;
+}
+
+function getTermsAndConditions(resource = {}) {
+  const genericTerms = getProperty(resource, 'genericTerms');
+  const specificTerms = getProperty(resource, 'specificTerms');
+
+  if (genericTerms && specificTerms) {
+    return `${specificTerms}\n\n${genericTerms}`;
+  }
+  return `${specificTerms}${genericTerms}`;
 }
 
 export {
@@ -115,5 +132,6 @@ export {
   getHumanizedPeriod,
   getOpeningHours,
   getOpenReservations,
-  getPeopleCapacityString,
+  getResourcePageUrl,
+  getTermsAndConditions,
 };

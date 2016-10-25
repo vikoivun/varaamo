@@ -6,7 +6,7 @@ import merge from 'lodash/merge';
 import set from 'lodash/set';
 import { CALL_API } from 'redux-api-middleware';
 
-import rootReducer from 'reducers/index';
+import rootReducer from 'state/reducers';
 
 
 function createApiTest(options) {
@@ -128,7 +128,7 @@ function createApiTest(options) {
             });
             const func = (
               value.length === 2 ?
-              (done) => value(getParams(), done) :
+              done => value(getParams(), done) :
               () => value(getParams())
             );
             it(name, func);
@@ -155,14 +155,14 @@ function createApiTest(options) {
               promise = payload({ type: actionTests.type }, {}, response);
             });
 
-            it('should exist', () => {
+            it('exists', () => {
               expect(payload).to.exist;
             });
 
             payloadTests.tests && forIn(payloadTests.tests, (value, name) => {
               const func = (
                 value.length === 2 ?
-                (done) => value({ promise, payload, response }, done) :
+                done => value({ promise, payload, response }, done) :
                 () => value({ promise, payload, response })
               );
               it(name, func);
@@ -208,11 +208,11 @@ function getState(extraState = {}) {
 }
 
 function makeButtonTests(button, name, expectedText, expectedOnClickFunction) {
-  it(`should be an ${name} button`, () => {
+  it(`is an ${name} button`, () => {
     expect(button.props().children).to.equal(expectedText);
   });
 
-  it('clicking the button should call correct onClick function', () => {
+  it('clicking the button calls correct onClick function', () => {
     expectedOnClickFunction.reset();
     button.props().onClick();
 

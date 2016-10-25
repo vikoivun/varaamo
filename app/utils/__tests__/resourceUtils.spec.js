@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import MockDate from 'mockdate';
 import moment from 'moment';
+import queryString from 'query-string';
 
 import constants from 'constants/AppConstants';
 import {
@@ -9,8 +10,9 @@ import {
   getAvailabilityDataForWholeDay,
   getHumanizedPeriod,
   getOpeningHours,
-  getPeopleCapacityString,
   getOpenReservations,
+  getResourcePageUrl,
+  getTermsAndConditions,
 } from 'utils/resourceUtils';
 
 describe('Utils: resourceUtils', () => {
@@ -429,7 +431,7 @@ describe('Utils: resourceUtils', () => {
       const period = '04:00:00';
       const periodString = getHumanizedPeriod(period);
 
-      expect(periodString).to.equal('4h');
+      expect(periodString).to.equal('4 h');
     });
   });
 
@@ -462,37 +464,6 @@ describe('Utils: resourceUtils', () => {
       const expected = { closes: 'first-closes', opens: 'first-opens' };
 
       expect(getOpeningHours(resource)).to.deep.equal(expected);
-    });
-  });
-
-  describe('getPeopleCapacityString', () => {
-    it('returns an empty string if capacity is undefined', () => {
-      const capacity = undefined;
-      const capacityString = getPeopleCapacityString(capacity);
-
-      expect(capacityString).to.equal('');
-    });
-
-    it('returns an empty string if capacity is null', () => {
-      const capacity = null;
-      const capacityString = getPeopleCapacityString(capacity);
-
-      expect(capacityString).to.equal('');
-    });
-
-    it('returns an empty string if capacity is 0', () => {
-      const capacity = 0;
-      const capacityString = getPeopleCapacityString(capacity);
-
-      expect(capacityString).to.equal('');
-    });
-
-    it('returns a max capacity string if capacity is number bigger than 0', () => {
-      const capacity = 1;
-      const capacityString = getPeopleCapacityString(capacity);
-      const expected = `max ${capacity} hengelle.`;
-
-      expect(capacityString).to.equal(expected);
     });
   });
 
@@ -533,6 +504,107 @@ describe('Utils: resourceUtils', () => {
       ];
 
       expect(getOpenReservations(resource)).to.deep.equal(expected);
+    });
+  });
+
+  describe('getResourcePageUrl', () => {
+    it('returns an empty string if resource is undefined', () => {
+      const resource = undefined;
+      const resourcePageUrl = getResourcePageUrl(resource);
+
+      expect(resourcePageUrl).to.equal('');
+    });
+
+    it('returns an empty string if resource does not have id', () => {
+      const resource = {};
+      const resourcePageUrl = getResourcePageUrl(resource);
+
+      expect(resourcePageUrl).to.equal('');
+    });
+
+    it('returns correct url if date is not given', () => {
+      const resource = { id: 'some-id' };
+      const resourcePageUrl = getResourcePageUrl(resource);
+      const expected = `/resources/${resource.id}`;
+
+      expect(resourcePageUrl).to.equal(expected);
+    });
+
+    it('returns correct url if date is given', () => {
+      const resource = { id: 'some-id' };
+      const date = '2015-10-10';
+      const resourcePageUrl = getResourcePageUrl(resource, date);
+      const expected = `/resources/${resource.id}?date=2015-10-10`;
+
+      expect(resourcePageUrl).to.equal(expected);
+    });
+
+    it('returns correct url if date is given in datetime format', () => {
+      const resource = { id: 'some-id' };
+      const date = '2015-10-10T08:00:00+03:00';
+      const resourcePageUrl = getResourcePageUrl(resource, date);
+      const expected = `/resources/${resource.id}?date=2015-10-10`;
+
+      expect(resourcePageUrl).to.equal(expected);
+    });
+
+    it('returns correct url if date and time are given', () => {
+      const resource = { id: 'some-id' };
+      const date = '2015-10-10';
+      const time = '2015-10-10T08:00:00+03:00';
+      const resourcePageUrl = getResourcePageUrl(resource, date, time);
+      const expected = `/resources/${resource.id}?${queryString.stringify({ date, time })}`;
+
+      expect(resourcePageUrl).to.equal(expected);
+    });
+  });
+
+  describe('getTermsAndConditions', () => {
+    describe('when both specific and generic terms are specified', () => {
+      const genericTerms = { fi: 'generic terms' };
+      const specificTerms = { fi: 'specific terms' };
+
+      it('returns specific and generic terms separated by blank lines', () => {
+        const resource = { genericTerms, specificTerms };
+        const expected = `${specificTerms.fi}\n\n${genericTerms.fi}`;
+
+        expect(getTermsAndConditions(resource)).to.equal(expected);
+      });
+    });
+
+    describe('when only specific terms is specified', () => {
+      const genericTerms = null;
+      const specificTerms = { fi: 'specific terms' };
+
+      it('returns only specific terms', () => {
+        const resource = { genericTerms, specificTerms };
+        const expected = specificTerms.fi;
+
+        expect(getTermsAndConditions(resource)).to.equal(expected);
+      });
+    });
+
+    describe('when only generic terms is specified', () => {
+      const genericTerms = { fi: 'generic terms' };
+      const specificTerms = null;
+
+      it('returns only specific terms', () => {
+        const resource = { genericTerms, specificTerms };
+        const expected = genericTerms.fi;
+
+        expect(getTermsAndConditions(resource)).to.equal(expected);
+      });
+    });
+
+    describe('when neither specific or generic terms is specified', () => {
+      const genericTerms = null;
+      const specificTerms = null;
+
+      it('returns an empty string', () => {
+        const resource = { genericTerms, specificTerms };
+
+        expect(getTermsAndConditions(resource)).to.equal('');
+      });
     });
   });
 });

@@ -3,7 +3,7 @@ import { decamelizeKeys } from 'humps';
 import { CALL_API } from 'redux-api-middleware';
 
 import types from 'constants/ActionTypes';
-import schemas from 'middleware/Schemas';
+import schemas from 'state/middleware/Schemas';
 import {
   buildAPIUrl,
   getErrorTypeDescriptor,
@@ -11,6 +11,19 @@ import {
   getRequestTypeDescriptor,
   getSuccessTypeDescriptor,
 } from 'utils/apiUtils';
+import { getMissingValues, isStaffEvent } from 'utils/reservationUtils';
+
+function commentReservation(reservation, resource, comments) {
+  const missingValues = getMissingValues(reservation);
+  const staffEvent = isStaffEvent(reservation, resource);
+  return putReservation(Object.assign(
+    {},
+    reservation,
+    missingValues,
+    { comments },
+    { staffEvent }
+  ));
+}
 
 function confirmPreliminaryReservation(reservation) {
   return putReservation(Object.assign({}, reservation, { state: 'confirmed' }));
@@ -71,7 +84,7 @@ function fetchReservations(params = {}) {
 }
 
 function parseReservationData(reservation) {
-  const parsed = pickBy(reservation, (value) => value);
+  const parsed = pickBy(reservation, value => value);
   return JSON.stringify(decamelizeKeys(parsed));
 }
 
@@ -145,6 +158,7 @@ function getTrackingInfo(type, resource) {
 }
 
 export {
+  commentReservation,
   confirmPreliminaryReservation,
   deleteReservation,
   denyPreliminaryReservation,

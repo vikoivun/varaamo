@@ -1,7 +1,7 @@
 import { CALL_API } from 'redux-api-middleware';
 
 import types from 'constants/ActionTypes';
-import schemas from 'middleware/Schemas';
+import schemas from 'state/middleware/Schemas';
 import {
   buildAPIUrl,
   getErrorTypeDescriptor,
@@ -26,7 +26,7 @@ function fetchUnits() {
       endpoint: buildAPIUrl('unit', fetchParams),
       method: 'GET',
       headers: getHeadersCreator(),
-      bailout: (state) => !state.api.shouldFetch.units,
+      bailout: state => !state.api.shouldFetch.units,
     },
   };
 }

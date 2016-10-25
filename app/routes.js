@@ -1,25 +1,24 @@
 import React from 'react';
-import { Route } from 'react-router';
+import { IndexRoute, Redirect, Route } from 'react-router';
 
-import App from 'containers/App';
-import UserReservationsPage from 'containers/UserReservationsPage';
-import AdminResourcesPage from 'containers/AdminResourcesPage';
-import ReservationPage from 'containers/ReservationPage';
-import ResourcePage from 'containers/ResourcePage';
-import AboutPage from 'screens/about/AboutPage';
-import HomePage from 'screens/home/HomePage';
-import NotFoundPage from 'screens/not-found/NotFoundPage';
-import SearchPage from 'screens/search/SearchPage';
+import AppContainer from 'pages/AppContainer';
+import AboutPage from 'pages/about';
+import AdminResourcesPage from 'pages/admin-resources';
+import HomePage from 'pages/home';
+import NotFoundPage from 'pages/not-found';
+import ResourcePage from 'pages/resource';
+import SearchPage from 'pages/search';
+import UserReservationsPage from 'pages/user-reservations';
 
 export default (params) => {
-  function removeFacebookAppendedHash(nextState, replaceState, cb) {
+  function removeFacebookAppendedHash(nextState, replace, callback) {
     if (window.location.hash && window.location.hash.indexOf('_=_') !== -1) {
-      replaceState(null, window.location.hash.replace('_=_', ''));
+      replace(window.location.hash.replace('_=_', ''));
     }
-    cb();
+    callback();
   }
 
-  function requireAuth(nextState, replaceState, cb) {
+  function requireAuth(nextState, replace, callback) {
     setTimeout(() => {
       const { auth } = params.getState();
 
@@ -28,25 +27,25 @@ export default (params) => {
         // the window.location.replace instead of the replaceState provided by react router.
         window.location.replace(`${window.location.origin}/login`);
       }
-      cb();
+      callback();
     }, 0);
   }
 
-  function scrollTop(nextState, replaceState, cb) {
+  function scrollTop(nextState, replace, callback) {
     window.scrollTo(0, 0);
-    cb();
+    callback();
   }
 
   return (
-    <Route component={App} onEnter={removeFacebookAppendedHash}>
+    <Route component={AppContainer} onEnter={removeFacebookAppendedHash} path="/">
       <Route onEnter={requireAuth}>
         <Route component={AdminResourcesPage} path="/admin-resources" />
         <Route component={UserReservationsPage} path="/my-reservations" />
       </Route>
-      <Route component={HomePage} onEnter={scrollTop} path="/" />
+      <IndexRoute component={HomePage} onEnter={scrollTop} />
       <Route component={AboutPage} onEnter={scrollTop} path="/about" />
+      <Redirect from="/resources/:id/reservation" to="/resources/:id" />
       <Route component={ResourcePage} onEnter={scrollTop} path="/resources/:id" />
-      <Route component={ReservationPage} path="/resources/:id/reservation" />
       <Route component={SearchPage} path="/search" />
       <Route component={NotFoundPage} path="*" />
     </Route>

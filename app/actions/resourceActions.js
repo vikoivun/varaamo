@@ -1,7 +1,7 @@
 import { CALL_API } from 'redux-api-middleware';
 
 import types from 'constants/ActionTypes';
-import schemas from 'middleware/Schemas';
+import schemas from 'state/middleware/Schemas';
 import {
   buildAPIUrl,
   getErrorTypeDescriptor,
@@ -9,6 +9,15 @@ import {
   getRequestTypeDescriptor,
   getSuccessTypeDescriptor,
 } from 'utils/apiUtils';
+
+function fetchFavoritedResources(timeAsMoment, source) {
+  const params = {
+    end: timeAsMoment.endOf('day').toISOString(),
+    is_favorite: true,
+    start: timeAsMoment.startOf('day').toISOString(),
+  };
+  return fetchResources(params, source);
+}
 
 function fetchResource(id, params = {}) {
   return {
@@ -89,6 +98,7 @@ function unfavoriteResource(id) {
 
 
 export {
+  fetchFavoritedResources,
   fetchResource,
   fetchResources,
   favoriteResource,
