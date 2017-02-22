@@ -3,6 +3,8 @@ import FormControl from 'react-bootstrap/lib/FormControl';
 import Panel from 'react-bootstrap/lib/Panel';
 import Select from 'react-select';
 
+import { injectT } from 'i18n';
+
 class AdvancedSearch extends Component {
   render() {
     const {
@@ -10,6 +12,7 @@ class AdvancedSearch extends Component {
       onFiltersChange,
       filters,
       purposeOptions,
+      t,
     } = this.props;
 
     const purposeSelectValue = purposeOptions.some(option => option.value === filters.purpose) ?
@@ -20,20 +23,20 @@ class AdvancedSearch extends Component {
       <Panel
         collapsible
         defaultExpanded={Boolean(purposeSelectValue)}
-        header="Tarkennettu haku"
+        header={t('AdvancedSearch.title')}
       >
-        <h4>Tilan käyttötarkoitus</h4>
+        <h4>{t('AdvancedSearch.purposeHeader')}</h4>
         <Select
           clearable
           isLoading={isFetchingPurposes}
           name="purpose-filter-select"
-          onChange={option => onFiltersChange({ purpose: option.value })}
+          onChange={option => onFiltersChange({ purpose: option ? option.value : '' })}
           options={purposeOptions}
           placeholder=" "
           searchable={false}
           value={purposeSelectValue}
         />
-        <h4>Tilan henkilömäärä vähintään</h4>
+        <h4>{t('AdvancedSearch.peopleCapacityHeader')}</h4>
         <FormControl
           min="0"
           name="people-capacity-filter"
@@ -51,6 +54,7 @@ AdvancedSearch.propTypes = {
   onFiltersChange: PropTypes.func.isRequired,
   filters: PropTypes.object.isRequired,
   purposeOptions: PropTypes.array.isRequired,
+  t: PropTypes.func.isRequired,
 };
 
-export default AdvancedSearch;
+export default injectT(AdvancedSearch);

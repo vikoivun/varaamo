@@ -1,14 +1,20 @@
-import React, { Component, PropTypes } from 'react';
 import moment from 'moment';
+import React, { Component, PropTypes } from 'react';
 import { Link } from 'react-router';
 
 import CommentButton from 'shared/comment-button';
 import ReservationAccessCode from 'shared/reservation-access-code';
 import TimeRange from 'shared/time-range';
+import { injectT } from 'i18n';
 import { getOpeningHours, getResourcePageUrl } from 'utils/resourceUtils';
 import { prettifyHours } from 'utils/timeUtils';
 
 class ResourcesTableRow extends Component {
+  getAvailableTime(untilDate) {
+    const availableHours = moment(untilDate).diff(moment(), 'hours', true);
+    return prettifyHours(availableHours, true);
+  }
+
   getReserverName(reservation) {
     return (
       reservation.reserverName ||
@@ -19,36 +25,45 @@ class ResourcesTableRow extends Component {
     );
   }
 
-  getAvailableTime(untilDate) {
-    const availableHours = moment(untilDate).diff(moment(), 'hours', true);
-    const availableTime = prettifyHours(availableHours, true);
-    return (
-      <td className="resource-table-row availability">
-        {`${availableTime} heti`}
-      </td>
-    );
-  }
-
   renderAvailable() {
     const {
       currentReservation,
       nextReservation,
       resource,
+      t,
     } = this.props;
     const { closes, opens } = getOpeningHours(resource);
     const now = moment();
     const closedToday = (closes && opens) === null;
 
     if (closedToday || ((now < moment(opens)) || (moment(closes) < now))) {
-      return <td className="resource-table-row availability reserved">Suljettu</td>;
+      return (
+        <td className="resource-table-row availability reserved">
+          {t('ResourcesTableRow.closed')}
+        </td>
+      );
     }
     if (currentReservation) {
-      return <td className="resource-table-row availability reserved">Varattu</td>;
+      return (
+        <td className="resource-table-row availability reserved">
+          {t('ResourcesTableRow.reserved')}
+        </td>
+      );
     }
     if (nextReservation) {
-      return this.getAvailableTime(nextReservation.begin);
+      const availableTime = this.getAvailableTime(nextReservation.begin);
+      return (
+        <td className="resource-table-row availability">
+          {t('ResourcesTableRow.availableTime', { availableTime })}
+        </td>
+      );
     }
-    return this.getAvailableTime(closes);
+    const availableTime = this.getAvailableTime(closes);
+    return (
+      <td className="resource-table-row availability">
+        {t('ResourcesTableRow.availableTime', { availableTime })}
+      </td>
+    );
   }
 
   render() {
@@ -62,7 +77,7 @@ class ResourcesTableRow extends Component {
       <tr>
         <td className="resource-table-row name">
           <Link to={getResourcePageUrl(resource)}>
-            {resource.name.fi}
+            {resource.name}
           </Link>
         </td>
         {this.renderAvailable()}
@@ -70,9 +85,9 @@ class ResourcesTableRow extends Component {
           <td className="resource-table-row reservation-range" key={`${reservation.id}-range`}>
             <TimeRange
               begin={reservation.begin}
-              dateFormat=" "
-              dateTimeSeparator=""
+              beginFormat="LT"
               end={reservation.end}
+              endFormat="LT"
             />
           </td>,
           <td className="resource-table-row reserver" key={`${reservation.id}-reserver`}>
@@ -110,6 +125,7 @@ ResourcesTableRow.propTypes = {
   resource: PropTypes.shape({
     openingHours: PropTypes.array.isRequired,
   }).isRequired,
+  t: PropTypes.func.isRequired,
 };
 
-export default ResourcesTableRow;
+export default injectT(ResourcesTableRow);

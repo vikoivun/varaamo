@@ -1,16 +1,16 @@
 import { expect } from 'chai';
-import { shallow } from 'enzyme';
 import React from 'react';
 import Immutable from 'seamless-immutable';
 
+import ReservationStateLabel from 'shared/reservation-state-label';
 import TimeRange from 'shared/time-range';
 import Image from 'utils/fixtures/Image';
 import Reservation from 'utils/fixtures/Reservation';
 import Resource from 'utils/fixtures/Resource';
 import Unit from 'utils/fixtures/Unit';
 import ReservationControls from 'shared/reservation-controls';
-import ReservationStateLabel from 'shared/reservation-state-label';
 import { getResourcePageUrl } from 'utils/resourceUtils';
+import { shallowWithIntl } from 'utils/testUtils';
 import ReservationListItem from './ReservationListItem';
 
 describe('pages/user-reservations/reservation-list/ReservationListItem', () => {
@@ -27,7 +27,7 @@ describe('pages/user-reservations/reservation-list/ReservationListItem', () => {
   let component;
 
   before(() => {
-    component = shallow(<ReservationListItem {...props} />);
+    component = shallowWithIntl(<ReservationListItem {...props} />);
   });
 
   describe('rendering', () => {
@@ -39,7 +39,7 @@ describe('pages/user-reservations/reservation-list/ReservationListItem', () => {
       const image = component.find('img');
 
       expect(image).to.have.length(1);
-      expect(image.props().alt).to.equal(props.resource.images[0].caption.fi);
+      expect(image.props().alt).to.equal(props.resource.images[0].caption);
       expect(image.props().src).to.contain(props.resource.images[0].url);
     });
 
@@ -51,13 +51,13 @@ describe('pages/user-reservations/reservation-list/ReservationListItem', () => {
     });
 
     it('displays the name of the resource', () => {
-      const expected = props.resource.name.fi;
+      const expected = props.resource.name;
 
       expect(component.find('h4').text()).to.contain(expected);
     });
 
     it('displays the name of the given unit in props', () => {
-      const expected = props.unit.name.fi;
+      const expected = props.unit.name;
 
       expect(component.find('h4').text()).to.contain(expected);
     });
@@ -74,14 +74,11 @@ describe('pages/user-reservations/reservation-list/ReservationListItem', () => {
       expect(resourcePageLinkWithTime.length).to.equal(1);
     });
 
-    it('contains two TimeRange components with correct begin and end times', () => {
+    it('contains TimeRange component with correct props', () => {
       const timeRange = component.find(TimeRange);
-
-      expect(timeRange).to.have.length(2);
-      expect(timeRange.at(0).props().begin).to.equal(props.reservation.begin);
-      expect(timeRange.at(0).props().end).to.equal(props.reservation.end);
-      expect(timeRange.at(1).props().begin).to.equal(props.reservation.begin);
-      expect(timeRange.at(1).props().end).to.equal(props.reservation.end);
+      expect(timeRange).to.have.length(1);
+      expect(timeRange.prop('begin')).to.equal(props.reservation.begin);
+      expect(timeRange.prop('end')).to.equal(props.reservation.end);
     });
 
     it('renders ReservationStateLabel component', () => {

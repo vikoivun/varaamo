@@ -1,33 +1,25 @@
-import { createSelector } from 'reselect';
+import { createSelector, createStructuredSelector } from 'reselect';
 
 import ActionTypes from 'constants/ActionTypes';
 import ModalTypes from 'constants/ModalTypes';
+import { createResourceSelector } from 'state/selectors/dataSelectors';
 import modalIsOpenSelectorFactory from 'state/selectors/factories/modalIsOpenSelectorFactory';
 import requestIsActiveSelectorFactory from 'state/selectors/factories/requestIsActiveSelectorFactory';
 
-const reservationsToShowSelector = state => state.ui.reservations.toShow;
-const resourcesSelector = state => state.data.resources;
+function reservationSelector(state) {
+  return state.ui.reservations.toShow[0] || {};
+}
 
-const commentModalSelector = createSelector(
-  requestIsActiveSelectorFactory(ActionTypes.API.RESERVATION_PUT_REQUEST),
-  modalIsOpenSelectorFactory(ModalTypes.RESERVATION_COMMENT),
-  reservationsToShowSelector,
-  resourcesSelector,
-  (
-    isEditingReservations,
-    reservationInfoModalIsOpen,
-    reservationsToShow,
-    resources,
-  ) => {
-    const reservation = reservationsToShow[0] || {};
-    const resource = reservation.resource ? resources[reservation.resource] : {};
-    return {
-      isEditingReservations,
-      reservation,
-      resource,
-      show: reservationInfoModalIsOpen,
-    };
-  }
+const resourceIdSelector = createSelector(
+  reservationSelector,
+  reservation => reservation.resource
 );
+
+const commentModalSelector = createStructuredSelector({
+  isEditingReservations: requestIsActiveSelectorFactory(ActionTypes.API.RESERVATION_PUT_REQUEST),
+  reservation: reservationSelector,
+  resource: createResourceSelector(resourceIdSelector),
+  show: modalIsOpenSelectorFactory(ModalTypes.RESERVATION_COMMENT),
+});
 
 export default commentModalSelector;

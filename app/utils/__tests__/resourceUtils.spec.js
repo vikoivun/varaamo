@@ -13,6 +13,7 @@ import {
   getOpenReservations,
   getResourcePageUrl,
   getTermsAndConditions,
+  reservingIsRestricted,
 } from 'utils/resourceUtils';
 
 describe('Utils: resourceUtils', () => {
@@ -111,8 +112,8 @@ describe('Utils: resourceUtils', () => {
       it('returns correct data', () => {
         const openingHours = {};
         const resource = getResource(openingHours);
-        const availabilityData = getAvailabilityDataForWholeDay(resource);
-        const expected = { text: 'Suljettu', bsStyle: 'danger' };
+        const availabilityData = getAvailabilityDataForNow(resource);
+        const expected = { status: 'closed', bsStyle: 'danger' };
 
         expect(availabilityData).to.deep.equal(expected);
       });
@@ -136,10 +137,11 @@ describe('Utils: resourceUtils', () => {
           const reservations = [];
           const resource = getResource(openingHours, reservations);
           const availabilityData = getAvailabilityDataForNow(resource);
-          const expectedTime = moment(openingHours.opens);
+          const expectedTime = moment(openingHours.opens).format(constants.TIME_FORMAT);
           const expected = {
-            text: `Vapautuu klo ${expectedTime.format(constants.TIME_FORMAT)}`,
+            status: 'availableAt',
             bsStyle: 'danger',
+            values: { time: expectedTime },
           };
 
           expect(availabilityData).to.deep.equal(expected);
@@ -164,10 +166,11 @@ describe('Utils: resourceUtils', () => {
           ];
           const resource = getResource(openingHours, reservations);
           const availabilityData = getAvailabilityDataForNow(resource);
-          const expectedTime = moment(reservations[0].end);
+          const expectedTime = moment(reservations[0].end).format(constants.TIME_FORMAT);
           const expected = {
-            text: `Vapautuu klo ${expectedTime.format(constants.TIME_FORMAT)}`,
+            status: 'availableAt',
             bsStyle: 'danger',
+            values: { time: expectedTime },
           };
 
           expect(availabilityData).to.deep.equal(expected);
@@ -192,10 +195,11 @@ describe('Utils: resourceUtils', () => {
           ];
           const resource = getResource(openingHours, reservations);
           const availabilityData = getAvailabilityDataForNow(resource);
-          const expectedTime = moment(openingHours.opens);
+          const expectedTime = moment(openingHours.opens).format(constants.TIME_FORMAT);
           const expected = {
-            text: `Vapautuu klo ${expectedTime.format(constants.TIME_FORMAT)}`,
+            status: 'availableAt',
             bsStyle: 'danger',
+            values: { time: expectedTime },
           };
 
           expect(availabilityData).to.deep.equal(expected);
@@ -220,7 +224,7 @@ describe('Utils: resourceUtils', () => {
           };
           const resource = getResource(openingHours, []);
           const availabilityData = getAvailabilityDataForNow(resource);
-          const expected = { text: 'Heti vapaa', bsStyle: 'success' };
+          const expected = { status: 'available', bsStyle: 'success' };
 
           expect(availabilityData).to.deep.equal(expected);
         });
@@ -240,10 +244,11 @@ describe('Utils: resourceUtils', () => {
           ];
           const resource = getResource(openingHours, reservations);
           const availabilityData = getAvailabilityDataForNow(resource);
-          const expectedTime = moment(reservations[0].end);
+          const expectedTime = moment(reservations[0].end).format(constants.TIME_FORMAT);
           const expected = {
-            text: `Vapautuu klo ${expectedTime.format(constants.TIME_FORMAT)}`,
+            status: 'availableAt',
             bsStyle: 'danger',
+            values: { time: expectedTime },
           };
 
           expect(availabilityData).to.deep.equal(expected);
@@ -268,8 +273,7 @@ describe('Utils: resourceUtils', () => {
           ];
           const resource = getResource(openingHours, reservations);
           const availabilityData = getAvailabilityDataForNow(resource);
-          const expected = { text: 'Heti vapaa', bsStyle: 'success' };
-
+          const expected = { status: 'available', bsStyle: 'success' };
           expect(availabilityData).to.deep.equal(expected);
         });
       });
@@ -291,7 +295,7 @@ describe('Utils: resourceUtils', () => {
         };
         const resource = getResource(openingHours, []);
         const availabilityData = getAvailabilityDataForNow(resource);
-        const expected = { text: 'Suljettu', bsStyle: 'danger' };
+        const expected = { status: 'closed', bsStyle: 'danger' };
 
         expect(availabilityData).to.deep.equal(expected);
       });
@@ -308,7 +312,22 @@ describe('Utils: resourceUtils', () => {
         const openingHours = {};
         const resource = getResource(openingHours);
         const availabilityData = getAvailabilityDataForWholeDay(resource);
-        const expected = { text: 'Suljettu', bsStyle: 'danger' };
+        const expected = { status: 'closed', bsStyle: 'danger' };
+
+        expect(availabilityData).to.deep.equal(expected);
+      });
+    });
+
+    describe('if reserving is limited in a future date', () => {
+      it('returns correct data', () => {
+        const openingHours = [{
+          opens: '2016-12-12T12:00:00+03:00',
+          closes: '2016-12-12T18:00:00+03:00',
+        }];
+        const date = '2016-12-12';
+        const resource = { openingHours, reservableBefore: '2016-10-10' };
+        const availabilityData = getAvailabilityDataForWholeDay(resource, date);
+        const expected = { status: 'reservingRestricted', bsStyle: 'danger' };
 
         expect(availabilityData).to.deep.equal(expected);
       });
@@ -323,7 +342,11 @@ describe('Utils: resourceUtils', () => {
         const reservations = [];
         const resource = getResource(openingHours, reservations);
         const availabilityData = getAvailabilityDataForWholeDay(resource);
-        const expected = { text: 'Vapaata 6 tuntia', bsStyle: 'success' };
+        const expected = {
+          status: 'availableTime',
+          bsStyle: 'success',
+          values: { hours: 6 },
+        };
 
         expect(availabilityData).to.deep.equal(expected);
       });
@@ -347,7 +370,11 @@ describe('Utils: resourceUtils', () => {
         ];
         const resource = getResource(openingHours, reservations);
         const availabilityData = getAvailabilityDataForWholeDay(resource);
-        const expected = { text: 'Vapaata 4.5 tuntia', bsStyle: 'success' };
+        const expected = {
+          status: 'availableTime',
+          bsStyle: 'success',
+          values: { hours: 4.5 },
+        };
 
         expect(availabilityData).to.deep.equal(expected);
       });
@@ -366,7 +393,11 @@ describe('Utils: resourceUtils', () => {
         ];
         const resource = getResource(openingHours, reservations);
         const availabilityData = getAvailabilityDataForWholeDay(resource);
-        const expected = { text: 'Vapaata 6 tuntia', bsStyle: 'success' };
+        const expected = {
+          status: 'availableTime',
+          bsStyle: 'success',
+          values: { hours: 6 },
+        };
 
         expect(availabilityData).to.deep.equal(expected);
       });
@@ -385,7 +416,11 @@ describe('Utils: resourceUtils', () => {
         ];
         const resource = getResource(openingHours, reservations);
         const availabilityData = getAvailabilityDataForWholeDay(resource);
-        const expected = { text: 'Vapaata 6 tuntia', bsStyle: 'success' };
+        const expected = {
+          status: 'availableTime',
+          bsStyle: 'success',
+          values: { hours: 6 },
+        };
 
         expect(availabilityData).to.deep.equal(expected);
       });
@@ -404,7 +439,7 @@ describe('Utils: resourceUtils', () => {
           ];
           const resource = getResource(openingHours, reservations);
           const availabilityData = getAvailabilityDataForWholeDay(resource);
-          const expected = { text: 'Varattu koko päivän', bsStyle: 'danger' };
+          const expected = { status: 'reserved', bsStyle: 'danger' };
 
           expect(availabilityData).to.deep.equal(expected);
         });
@@ -561,38 +596,33 @@ describe('Utils: resourceUtils', () => {
 
   describe('getTermsAndConditions', () => {
     describe('when both specific and generic terms are specified', () => {
-      const genericTerms = { fi: 'generic terms' };
-      const specificTerms = { fi: 'specific terms' };
+      const genericTerms = 'generic terms';
+      const specificTerms = 'specific terms';
 
       it('returns specific and generic terms separated by blank lines', () => {
         const resource = { genericTerms, specificTerms };
-        const expected = `${specificTerms.fi}\n\n${genericTerms.fi}`;
-
+        const expected = `${specificTerms}\n\n${genericTerms}`;
         expect(getTermsAndConditions(resource)).to.equal(expected);
       });
     });
 
     describe('when only specific terms is specified', () => {
       const genericTerms = null;
-      const specificTerms = { fi: 'specific terms' };
+      const specificTerms = 'specific terms';
 
       it('returns only specific terms', () => {
         const resource = { genericTerms, specificTerms };
-        const expected = specificTerms.fi;
-
-        expect(getTermsAndConditions(resource)).to.equal(expected);
+        expect(getTermsAndConditions(resource)).to.equal(specificTerms);
       });
     });
 
     describe('when only generic terms is specified', () => {
-      const genericTerms = { fi: 'generic terms' };
+      const genericTerms = 'generic terms';
       const specificTerms = null;
 
       it('returns only specific terms', () => {
         const resource = { genericTerms, specificTerms };
-        const expected = genericTerms.fi;
-
-        expect(getTermsAndConditions(resource)).to.equal(expected);
+        expect(getTermsAndConditions(resource)).to.equal(genericTerms);
       });
     });
 
@@ -604,6 +634,68 @@ describe('Utils: resourceUtils', () => {
         const resource = { genericTerms, specificTerms };
 
         expect(getTermsAndConditions(resource)).to.equal('');
+      });
+    });
+  });
+
+  describe('reservingIsRestricted', () => {
+    describe('when no date is given', () => {
+      const date = null;
+      const resource = {};
+
+      it('returns false', () => {
+        const isLimited = reservingIsRestricted(resource, date);
+        expect(isLimited).to.be.false;
+      });
+    });
+
+    describe('when resource does not have reservableBefore limit', () => {
+      const date = '2016-10-10';
+
+      it('returns false if user is an admin', () => {
+        const resource = { userPermissions: { isAdmin: true } };
+        const isLimited = reservingIsRestricted(resource, date);
+        expect(isLimited).to.be.false;
+      });
+
+      it('returns false if user is a regular user', () => {
+        const resource = { userPermissions: { isAdmin: false } };
+        const isLimited = reservingIsRestricted(resource, date);
+        expect(isLimited).to.be.false;
+      });
+    });
+
+    describe('when resource has reservableBefore limit and its after given date', () => {
+      const reservableBefore = '2016-12-12';
+      const date = '2016-10-10';
+
+      it('returns false if user is an admin', () => {
+        const resource = { userPermissions: { isAdmin: true }, reservableBefore };
+        const isLimited = reservingIsRestricted(resource, date);
+        expect(isLimited).to.be.false;
+      });
+
+      it('returns false if user is a regular user', () => {
+        const resource = { userPermissions: { isAdmin: false }, reservableBefore };
+        const isLimited = reservingIsRestricted(resource, date);
+        expect(isLimited).to.be.false;
+      });
+    });
+
+    describe('when resource has reservableBefore limit and its before given date', () => {
+      const reservableBefore = '2016-09-09';
+      const date = '2016-10-10';
+
+      it('returns false if user is an admin', () => {
+        const resource = { userPermissions: { isAdmin: true }, reservableBefore };
+        const isLimited = reservingIsRestricted(resource, date);
+        expect(isLimited).to.be.false;
+      });
+
+      it('returns true if user is a regular user', () => {
+        const resource = { userPermissions: { isAdmin: false }, reservableBefore };
+        const isLimited = reservingIsRestricted(resource, date);
+        expect(isLimited).to.be.true;
       });
     });
   });

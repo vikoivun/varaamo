@@ -5,28 +5,31 @@ import FormControl from 'react-bootstrap/lib/FormControl';
 import FormGroup from 'react-bootstrap/lib/FormGroup';
 import { findDOMNode } from 'react-dom';
 
+import { injectT } from 'i18n';
+
 class CommentForm extends Component {
   constructor(props) {
     super(props);
     this.handleSave = this.handleSave.bind(this);
   }
 
-  handleSave() {
+  handleSave(event) {
+    event.preventDefault();
     const comments = findDOMNode(this.refs.commentsInput).value;
     this.props.onSave(comments);
   }
 
   render() {
-    const { defaultValue, isSaving, onCancel } = this.props;
+    const { defaultValue, isSaving, onCancel, t } = this.props;
 
     return (
       <form className="comment-form">
         <FormGroup controlId="commentsTextarea">
-          <ControlLabel>Kommentit:</ControlLabel>
+          <ControlLabel>{t('CommentForm.label')}</ControlLabel>
           <FormControl
             componentClass="textarea"
             defaultValue={defaultValue}
-            placeholder="Varauksen mahdolliset lisätiedot"
+            placeholder={t('CommentForm.placeholder')}
             ref="commentsInput"
             rows={5}
           />
@@ -36,7 +39,7 @@ class CommentForm extends Component {
             bsStyle="default"
             onClick={onCancel}
           >
-            Takaisin
+            {t('common.back')}
           </Button>
           <Button
             bsStyle="success"
@@ -44,7 +47,7 @@ class CommentForm extends Component {
             onClick={this.handleSave}
             type="submit"
           >
-            {isSaving ? 'Tallennetaan...' : 'Tallenna'}
+            {isSaving ? t('common.saving') : t('common.save')}
           </Button>
         </div>
       </form>
@@ -57,6 +60,7 @@ CommentForm.propTypes = {
   isSaving: PropTypes.bool.isRequired,
   onCancel: PropTypes.func.isRequired,
   onSave: PropTypes.func.isRequired,
+  t: PropTypes.func.isRequired,
 };
 
-export default CommentForm;
+export default injectT(CommentForm);

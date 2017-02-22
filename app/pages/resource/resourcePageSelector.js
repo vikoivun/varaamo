@@ -1,44 +1,27 @@
-import { createSelector } from 'reselect';
+import { createSelector, createStructuredSelector } from 'reselect';
 
 import ActionTypes from 'constants/ActionTypes';
-import resourceSelector from 'state/selectors/resourceSelector';
+import { isAdminSelector, isLoggedInSelector } from 'state/selectors/authSelectors';
+import { createResourceSelector, unitsSelector } from 'state/selectors/dataSelectors';
 import dateSelector from 'state/selectors/dateSelector';
-import isAdminSelector from 'state/selectors/isAdminSelector';
-import isLoggedInSelector from 'state/selectors/isLoggedInSelector';
 import requestIsActiveSelectorFactory from 'state/selectors/factories/requestIsActiveSelectorFactory';
 
-const idSelector = (state, props) => props.params.id;
-const unitsSelector = state => state.data.units;
-
-const resourcePageSelector = createSelector(
-  dateSelector,
-  idSelector,
-  isAdminSelector,
-  requestIsActiveSelectorFactory(ActionTypes.API.RESOURCE_GET_REQUEST),
-  isLoggedInSelector,
+const resourceIdSelector = (state, props) => props.params.id;
+const resourceSelector = createResourceSelector(resourceIdSelector);
+const unitSelector = createSelector(
   resourceSelector,
   unitsSelector,
-  (
-    date,
-    id,
-    isAdmin,
-    isFetchingResource,
-    isLoggedIn,
-    resource,
-    units
-  ) => {
-    const unit = units[resource.unit] || {};
-
-    return {
-      date,
-      id,
-      isAdmin,
-      isFetchingResource,
-      isLoggedIn,
-      resource,
-      unit,
-    };
-  }
+  (resource, units) => units[resource.unit] || {}
 );
+
+const resourcePageSelector = createStructuredSelector({
+  date: dateSelector,
+  id: resourceIdSelector,
+  isAdmin: isAdminSelector,
+  isFetchingResource: requestIsActiveSelectorFactory(ActionTypes.API.RESOURCE_GET_REQUEST),
+  isLoggedIn: isLoggedInSelector,
+  resource: resourceSelector,
+  unit: unitSelector,
+});
 
 export default resourcePageSelector;

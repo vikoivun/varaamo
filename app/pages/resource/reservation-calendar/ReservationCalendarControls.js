@@ -3,27 +3,45 @@ import React, { Component, PropTypes } from 'react';
 import Button from 'react-bootstrap/lib/Button';
 import ButtonGroup from 'react-bootstrap/lib/ButtonGroup';
 
+import { injectT } from 'i18n';
+
 class ReservationCalendarControls extends Component {
   constructor(props) {
     super(props);
     this.handleMainClick = this.handleMainClick.bind(this);
   }
 
-  getButtonText(isEditing, isMakingReservations) {
+  getButtonText(t, isEditing, isMakingReservations) {
     if (isEditing) {
-      return isMakingReservations ? 'Tallennetaan...' : 'Vahvista muutokset';
+      return isMakingReservations ?
+        t('ReservationCalendarControls.saving') :
+        t('ReservationCalendarControls.confirmChanges');
     }
-    return isMakingReservations ? 'Varataan...' : 'Varaa';
+    return isMakingReservations ?
+      t('ReservationCalendarControls.reserving') :
+      t('ReservationCalendarControls.reserve');
   }
 
-  getReservationInfoMessage(resource, isLoggedIn) {
+  getReservationInfoNotification(t, resource, isLoggedIn) {
     if (resource.reservable) {
       if (isLoggedIn) {
-        return 'Valitse aika, jolle haluat tehdä varauksen.';
+        return {
+          message: t('Notifications.selectTimeToReserve'),
+          type: 'info',
+          timeout: 10000,
+        };
       }
-      return 'Kirjaudu sisään tehdäksesi varauksen tähän tilaan.';
+      return {
+        message: t('Notifications.loginToReserve'),
+        type: 'info',
+        timeout: 10000,
+      };
     }
-    return resource.reservationInfo;
+    return {
+      message: resource.reservationInfo,
+      type: 'info',
+      timeout: 10000,
+    };
   }
 
   handleMainClick() {
@@ -33,16 +51,12 @@ class ReservationCalendarControls extends Component {
       isLoggedIn,
       onClick,
       resource,
+      t,
     } = this.props;
 
     if (disabled) {
-      const message = this.getReservationInfoMessage(resource, isLoggedIn);
-      if (message) {
-        const notification = {
-          message,
-          type: 'info',
-          timeOut: 10000,
-        };
+      const notification = this.getReservationInfoNotification(t, resource, isLoggedIn);
+      if (notification && notification.message) {
         addNotification(notification);
       }
     } else {
@@ -56,6 +70,7 @@ class ReservationCalendarControls extends Component {
       isEditing,
       isMakingReservations,
       onCancel,
+      t,
     } = this.props;
 
     return (
@@ -67,7 +82,7 @@ class ReservationCalendarControls extends Component {
             onClick={this.handleMainClick}
             style={{ width: isEditing ? '50%' : '100%' }}
           >
-            {this.getButtonText(isEditing, isMakingReservations)}
+            {this.getButtonText(t, isEditing, isMakingReservations)}
           </Button>
           {isEditing && (
             <Button
@@ -75,7 +90,7 @@ class ReservationCalendarControls extends Component {
               onClick={onCancel}
               style={{ width: '50%' }}
             >
-              Takaisin
+              {t('ReservationCalendarControls.goBack')}
             </Button>
           )}
         </ButtonGroup>
@@ -93,6 +108,7 @@ ReservationCalendarControls.propTypes = {
   onCancel: PropTypes.func.isRequired,
   onClick: PropTypes.func.isRequired,
   resource: PropTypes.object.isRequired,
+  t: PropTypes.func.isRequired,
 };
 
-export default ReservationCalendarControls;
+export default injectT(ReservationCalendarControls);

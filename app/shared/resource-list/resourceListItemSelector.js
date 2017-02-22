@@ -1,36 +1,20 @@
-import { createSelector } from 'reselect';
+import { createSelector, createStructuredSelector } from 'reselect';
 
-import isLoggedInSelector from 'state/selectors/isLoggedInSelector';
+import { isLoggedInSelector } from 'state/selectors/authSelectors';
+import { createResourceSelector, unitsSelector } from 'state/selectors/dataSelectors';
 
-const resourcesSelector = state => state.data.resources;
 const resourceIdSelector = (state, props) => props.resourceId;
-const unitsSelector = state => state.data.units;
-
-const resourceSelector = createSelector(
-  resourcesSelector,
-  resourceIdSelector,
-  (resources, resourceId) => resources[resourceId] || {}
-);
-
+const resourceSelector = createResourceSelector(resourceIdSelector);
 const unitSelector = createSelector(
   unitsSelector,
   resourceSelector,
   (units, resource) => units[resource.unit] || {}
 );
 
-const resourceListItemSelector = createSelector(
-  isLoggedInSelector,
-  resourceSelector,
-  unitSelector,
-  (
-    isLoggedIn,
-    resource,
-    unit,
-  ) => ({
-    isLoggedIn,
-    resource,
-    unit,
-  })
-);
+const resourceListItemSelector = createStructuredSelector({
+  isLoggedIn: isLoggedInSelector,
+  resource: createResourceSelector(resourceIdSelector),
+  unit: unitSelector,
+});
 
 export default resourceListItemSelector;

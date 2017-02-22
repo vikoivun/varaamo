@@ -1,12 +1,12 @@
 export default {
-  API_URL: __API_URL__,
+  API_URL: SETTINGS.API_URL,
   CUSTOMIZATIONS: {
     'varaamo.espoo.fi': 'ESPOO',
     'varaamotest-espoo.hel.ninja': 'ESPOO',
   },
   DATE_FORMAT: 'YYYY-MM-DD',
+  DEFAULT_LOCALE: 'fi',
   FEEDBACK_URL: 'http://www.helmet-kirjasto.fi/varaamo-palaute/',
-  LOCALIZED_DATE_FORMAT: 'D.M.YYYY',
   NOTIFICATION_DEFAULTS: {
     message: '',
     type: 'info',
@@ -40,21 +40,23 @@ export default {
   RESERVATION_STATE_LABELS: {
     cancelled: {
       labelBsStyle: 'default',
-      labelText: 'Peruttu',
+      labelTextId: 'common.cancelled',
     },
     confirmed: {
       labelBsStyle: 'success',
-      labelText: 'Hyväksytty',
+      labelTextId: 'common.confirmed',
     },
     denied: {
       labelBsStyle: 'danger',
-      labelText: 'Hylätty',
+      labelTextId: 'common.denied',
     },
     requested: {
       labelBsStyle: 'primary',
-      labelText: 'Käsiteltävänä',
+      labelTextId: 'common.requested',
     },
   },
+  SHOW_TEST_SITE_MESSAGE: SETTINGS.SHOW_TEST_SITE_MESSAGE,
+  SUPPORTED_LANGUAGES: ['en', 'fi', 'sv'],
   SUPPORTED_SEARCH_FILTERS: {
     date: '',
     people: '',
@@ -62,5 +64,5 @@ export default {
     search: '',
   },
   TIME_FORMAT: 'H:mm',
-  TRACKING: __TRACKING__,
+  TRACKING: SETTINGS.TRACKING,
 };

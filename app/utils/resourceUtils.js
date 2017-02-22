@@ -5,7 +5,6 @@ import queryString from 'query-string';
 
 import constants from 'constants/AppConstants';
 import { getCurrentReservation, getNextAvailableTime } from 'utils/reservationUtils';
-import { getProperty } from 'utils/translationUtils';
 
 function isOpenNow(resource) {
   const { closes, opens } = getOpeningHours(resource);
@@ -21,7 +20,7 @@ function getAvailabilityDataForNow(resource = {}) {
   const reservations = getOpenReservations(resource);
 
   if (!closes || !opens) {
-    return { text: 'Suljettu', bsStyle: 'danger' };
+    return { status: 'closed', bsStyle: 'danger' };
   }
 
   const nowMoment = moment();
@@ -31,29 +30,34 @@ function getAvailabilityDataForNow(resource = {}) {
   const currentReservation = getCurrentReservation(reservations);
 
   if (nowMoment > closesMoment) {
-    return { text: 'Suljettu', bsStyle: 'danger' };
+    return { status: 'closed', bsStyle: 'danger' };
   }
 
   if (currentReservation || nowMoment < opensMoment) {
     const nextAvailableTime = getNextAvailableTime(reservations, beginMoment);
     if (nextAvailableTime < closesMoment) {
       return {
-        text: `Vapautuu klo ${nextAvailableTime.format(constants.TIME_FORMAT)}`,
+        status: 'availableAt',
         bsStyle: 'danger',
+        values: { time: nextAvailableTime.format(constants.TIME_FORMAT) },
       };
     }
-    return { text: 'Varattu koko päivän', bsStyle: 'danger' };
+    return { status: 'reserved', bsStyle: 'danger' };
   }
 
-  return { text: 'Heti vapaa', bsStyle: 'success' };
+  return { status: 'available', bsStyle: 'success' };
 }
 
-function getAvailabilityDataForWholeDay(resource = {}) {
+function getAvailabilityDataForWholeDay(resource = {}, date = null) {
   const { closes, opens } = getOpeningHours(resource);
   const reservations = getOpenReservations(resource);
 
   if (!closes || !opens) {
-    return { text: 'Suljettu', bsStyle: 'danger' };
+    return { status: 'closed', bsStyle: 'danger' };
+  }
+
+  if (reservingIsRestricted(resource, date)) {
+    return { status: 'reservingRestricted', bsStyle: 'danger' };
   }
 
   const opensMoment = moment(opens);
@@ -70,12 +74,13 @@ function getAvailabilityDataForWholeDay(resource = {}) {
   const rounded = Math.ceil(asHours * 2) / 2;
 
   if (rounded === 0) {
-    return { text: 'Varattu koko päivän', bsStyle: 'danger' };
+    return { status: 'reserved', bsStyle: 'danger' };
   }
 
   return {
-    text: rounded === 1 ? `Vapaata ${rounded} tunti` : `Vapaata ${rounded} tuntia`,
+    status: 'availableTime',
     bsStyle: 'success',
+    values: { hours: rounded },
   };
 }
 
@@ -116,13 +121,25 @@ function getResourcePageUrl(resource, date, time) {
 }
 
 function getTermsAndConditions(resource = {}) {
-  const genericTerms = getProperty(resource, 'genericTerms');
-  const specificTerms = getProperty(resource, 'specificTerms');
+  const genericTerms = resource.genericTerms || '';
+  const specificTerms = resource.specificTerms || '';
 
   if (genericTerms && specificTerms) {
     return `${specificTerms}\n\n${genericTerms}`;
   }
   return `${specificTerms}${genericTerms}`;
+}
+
+function reservingIsRestricted(resource, date) {
+  if (!date) {
+    return false;
+  }
+  const isAdmin = resource.userPermissions && resource.userPermissions.isAdmin;
+  const isLimited = (
+    resource.reservableBefore &&
+    moment(resource.reservableBefore).isBefore(moment(date), 'day')
+  );
+  return Boolean(isLimited && !isAdmin);
 }
 
 export {
@@ -134,4 +151,5 @@ export {
   getOpenReservations,
   getResourcePageUrl,
   getTermsAndConditions,
+  reservingIsRestricted,
 };
