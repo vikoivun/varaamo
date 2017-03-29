@@ -5,6 +5,7 @@ import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 
 import { fetchFavoritedResources } from 'actions/resourceActions';
+import { fetchPurposes } from 'actions/purposeActions';
 import {
   changeAdminResourcesPageDate,
   filterAdminResourceType,
@@ -29,6 +30,7 @@ class UnconnectedAdminResourcesPage extends Component {
 
   componentDidMount() {
     const interval = 10 * 60 * 1000;
+    this.props.actions.fetchPurposes();
     this.fetchResources();
     this.updateResourcesTimer = window.setInterval(this.fetchResources, interval);
   }
@@ -58,14 +60,15 @@ class UnconnectedAdminResourcesPage extends Component {
       filteredResourceTypes,
       isAdmin,
       isFetchingResources,
-      resources,
+      resourcesByPurpose,
       t,
       resourceTypes,
     } = this.props;
+    console.log(resourcesByPurpose);
     return (
       <PageWrapper className="admin-resources-page" title={t('AdminResourcesPage.title')}>
         <h1>{t('AdminResourcesPage.title')}</h1>
-        <Loader loaded={Boolean(!isFetchingResources || resources.length)}>
+        <Loader loaded={Boolean(!isFetchingResources || Object.keys(resourcesByPurpose).length)}>
           {isAdmin && (
             <div>
               <ResourceTypeFilter
@@ -76,13 +79,13 @@ class UnconnectedAdminResourcesPage extends Component {
               />
               <AvailabilityView
                 date={this.props.date}
-                groups={[{ name: '', resources }]}
+                groups={resourcesByPurpose}
                 onDateChange={this.props.actions.changeAdminResourcesPageDate}
                 onSelect={this.handleSelect}
               />
             </div>
           )}
-          {isAdmin && !resources.length && <p>{t('AdminResourcesPage.noResourcesMessage')}</p>}
+          {isAdmin && !Object.keys(resourcesByPurpose) && <p>{t('AdminResourcesPage.noResourcesMessage')}</p>}
           {!isAdmin && (
             <p>{t('AdminResourcesPage.noRightsMessage')}</p>
           )}
@@ -108,7 +111,7 @@ UnconnectedAdminResourcesPage.propTypes = {
   filteredResourceTypes: PropTypes.arrayOf(PropTypes.string).isRequired,
   isAdmin: PropTypes.bool.isRequired,
   isFetchingResources: PropTypes.bool.isRequired,
-  resources: PropTypes.array.isRequired,
+  resourcesByPurpose: PropTypes.array.isRequired,
   t: PropTypes.func.isRequired,
   resourceTypes: PropTypes.array.isRequired,
 };
@@ -119,6 +122,7 @@ function mapDispatchToProps(dispatch) {
   const actionCreators = {
     changeAdminResourcesPageDate,
     fetchFavoritedResources,
+    fetchPurposes,
     filterAdminResourceType,
     openConfirmReservationModal,
     unfilterAdminResourceType,

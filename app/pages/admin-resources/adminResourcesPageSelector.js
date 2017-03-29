@@ -1,12 +1,13 @@
 import includes from 'lodash/includes';
 import sortBy from 'lodash/sortBy';
+import transform from 'lodash/transform';
 import uniq from 'lodash/uniq';
 import moment from 'moment';
 import { createSelector, createStructuredSelector } from 'reselect';
 
 import ActionTypes from 'constants/ActionTypes';
 import { isAdminSelector } from 'state/selectors/authSelectors';
-import { resourcesSelector } from 'state/selectors/dataSelectors';
+import { purposesSelector, resourcesSelector } from 'state/selectors/dataSelectors';
 import requestIsActiveSelectorFactory from 'state/selectors/factories/requestIsActiveSelectorFactory';
 
 const dateSelector = state => state.ui.pages.adminResources.date || moment().format('YYYY-MM-DD');
@@ -27,14 +28,36 @@ const adminResourceTypesSelector = createSelector(
 const filteredAdminResourceSelector = createSelector(
   adminResourcesSelector,
   filteredResourceTypesSelector,
-  (resources, filteredResourceTypes) => resources.filter(
-    resource => !includes(filteredResourceTypes, resource.type.name)
-  )
+  (resources, filteredResourceTypes) => sortBy(
+    resources.filter(
+      resource => !includes(filteredResourceTypes, resource.type.name)
+    ), 'name')
 );
 
-const filteredAdminResourcesIdsSelector = createSelector(
+const resourcesByPurposeSelector = createSelector(
+  purposesSelector,
   filteredAdminResourceSelector,
-  resources => sortBy(resources, 'name').map(res => res.id),
+  (purposes, resources) => {
+    const resourceIdsByPurpose = {};
+    resources.forEach(resource =>
+      resource.purposes.forEach((purpose) => {
+        const resourcesIds = resourceIdsByPurpose[purpose.parent || purpose.id];
+        if (resourcesIds) {
+          resourcesIds.push(resource.id);
+        } else {
+          resourceIdsByPurpose[purpose.parent || purpose.id] = [resource.id];
+        }
+      })
+    );
+
+    const rv = transform(
+      resourceIdsByPurpose,
+      (memo, resourceIds, purposeId) =>
+        memo.push({ name: purposes[purposeId].name, resources: uniq(resourceIds) }),
+      []
+    );
+    return rv;
+  }
 );
 
 const adminResourcesPageSelector = createStructuredSelector({
@@ -42,7 +65,7 @@ const adminResourcesPageSelector = createStructuredSelector({
   filteredResourceTypes: filteredResourceTypesSelector,
   isAdmin: isAdminSelector,
   isFetchingResources: requestIsActiveSelectorFactory(ActionTypes.API.RESOURCES_GET_REQUEST),
-  resources: filteredAdminResourcesIdsSelector,
+  resourcesByPurpose: resourcesByPurposeSelector,
   resourceTypes: adminResourceTypesSelector,
 });
 
