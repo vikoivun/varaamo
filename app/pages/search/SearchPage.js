@@ -1,6 +1,7 @@
 import isEqual from 'lodash/isEqual';
 import React, { Component, PropTypes } from 'react';
 import { findDOMNode } from 'react-dom';
+import { geolocated, geoPropTypes } from 'react-geolocated';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 
@@ -46,10 +47,18 @@ class UnconnectedSearchPage extends Component {
     scrollTo(findDOMNode(this.refs.searchResults));
   }
 
-  searchResources(filters) {
+  searchResources = (filters) => {
     const { actions, searchDone } = this.props;
+    let searchFilters = filters;
+    if (this.props.coords) {
+      searchFilters = {
+        ...filters,
+        lat: this.props.coords.latitude,
+        lon: this.props.coords.longitude,
+      };
+    }
     if (searchDone || filters.purpose || filters.people || filters.search) {
-      actions.searchResources(filters);
+      actions.searchResources(searchFilters);
     }
   }
 
@@ -101,6 +110,7 @@ UnconnectedSearchPage.propTypes = {
   searchResultIds: PropTypes.array.isRequired,
   showMap: PropTypes.bool.isRequired,
   t: PropTypes.func.isRequired,
+  ...geoPropTypes,
 };
 
 UnconnectedSearchPage = injectT(UnconnectedSearchPage); // eslint-disable-line
@@ -117,4 +127,4 @@ function mapDispatchToProps(dispatch) {
 }
 
 export { UnconnectedSearchPage };
-export default connect(searchPageSelector, mapDispatchToProps)(UnconnectedSearchPage);
+export default connect(searchPageSelector, mapDispatchToProps)(geolocated()(UnconnectedSearchPage));
