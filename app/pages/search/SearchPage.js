@@ -1,7 +1,6 @@
 import isEqual from 'lodash/isEqual';
 import React, { Component, PropTypes } from 'react';
 import { findDOMNode } from 'react-dom';
-import { geolocated, geoPropTypes } from 'react-geolocated';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 
@@ -74,7 +73,7 @@ class UnconnectedSearchPage extends Component {
       showMap,
       t,
     } = this.props;
-
+    console.log(this.props);
     return (
       <PageWrapper className="search-page" title={t('SearchPage.title')}>
         <h1>{t('SearchPage.title')}</h1>
@@ -101,8 +100,9 @@ class UnconnectedSearchPage extends Component {
 
 UnconnectedSearchPage.propTypes = {
   actions: PropTypes.object.isRequired,
-  isFetchingSearchResults: PropTypes.bool.isRequired,
+  coords: PropTypes.object,
   filters: PropTypes.object.isRequired,
+  isFetchingSearchResults: PropTypes.bool.isRequired,
   isLoggedIn: PropTypes.bool.isRequired,
   location: PropTypes.object.isRequired,
   params: PropTypes.object.isRequired,
@@ -110,7 +110,6 @@ UnconnectedSearchPage.propTypes = {
   searchResultIds: PropTypes.array.isRequired,
   showMap: PropTypes.bool.isRequired,
   t: PropTypes.func.isRequired,
-  ...geoPropTypes,
 };
 
 UnconnectedSearchPage = injectT(UnconnectedSearchPage); // eslint-disable-line
@@ -127,4 +126,4 @@ function mapDispatchToProps(dispatch) {
 }
 
 export { UnconnectedSearchPage };
-export default connect(searchPageSelector, mapDispatchToProps)(geolocated()(UnconnectedSearchPage));
+export default connect(searchPageSelector, mapDispatchToProps)(UnconnectedSearchPage);

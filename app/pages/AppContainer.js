@@ -1,6 +1,7 @@
 import React, { Component, PropTypes } from 'react';
 import Grid from 'react-bootstrap/lib/Grid';
 import DocumentTitle from 'react-document-title';
+import { geolocated } from 'react-geolocated';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 
@@ -21,6 +22,7 @@ export class UnconnectedAppContainer extends Component {
   getChildContext() {
     return {
       location: this.props.location,
+      coords: this.props.coords,
     };
   }
 
@@ -58,15 +60,16 @@ export class UnconnectedAppContainer extends Component {
 
 UnconnectedAppContainer.propTypes = {
   children: PropTypes.node,
+  coords: React.PropTypes.object,
   fetchUser: PropTypes.func.isRequired,
   location: PropTypes.object.isRequired,
   userId: PropTypes.string,
 };
 
 UnconnectedAppContainer.childContextTypes = {
+  coords: React.PropTypes.object,
   location: React.PropTypes.object,
 };
 
 const actions = { fetchUser };
-
-export default connect(selector, actions)(UnconnectedAppContainer);
+export default connect(selector, actions)(geolocated()(UnconnectedAppContainer));

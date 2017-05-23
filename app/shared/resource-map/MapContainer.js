@@ -1,7 +1,6 @@
 import React, { PropTypes } from 'react';
 import { Map, TileLayer, ZoomControl } from 'react-leaflet';
 import { connect } from 'react-redux';
-import { geolocated, geoPropTypes } from 'react-geolocated';
 
 import selector from './mapSelector';
 import Marker from './Marker';
@@ -12,14 +11,14 @@ const defaultZoom = 10;
 
 export class UnconnectedResourceMapContainer extends React.Component {
   static propTypes = {
-    markers: PropTypes.array,
+    coords: PropTypes.object,
     boundaries: PropTypes.shape({
       maxLatitude: PropTypes.number,
       minLatitude: PropTypes.number,
       maxLongitude: PropTypes.number,
       minLongitude: PropTypes.number,
     }),
-    ...geoPropTypes,
+    markers: PropTypes.array,
   };
 
   componentDidUpdate(prevProps) {
@@ -88,4 +87,4 @@ export class UnconnectedResourceMapContainer extends React.Component {
   }
 }
 
-export default connect(selector)(geolocated()(UnconnectedResourceMapContainer));
+export default connect(selector)(UnconnectedResourceMapContainer);
