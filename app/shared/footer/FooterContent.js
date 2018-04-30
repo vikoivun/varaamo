@@ -38,6 +38,25 @@ function FooterContent({ t }) {
       );
     }
 
+    case 'VANTAA': {
+      return (
+        <Grid>
+          <Row>
+            <Col lg={4} md={4}>
+              <Link className="brand-link" to="/">
+                <Logo />
+                Varaamo
+              </Link>
+            </Col>
+            <Col lg={6} md={6}>
+              <p>{t('Footer.vantaaText')} {feedbackLink}</p>
+              {aboutLink}
+            </Col>
+          </Row>
+        </Grid>
+      );
+    }
+
     default: {
       return (
         <Grid>

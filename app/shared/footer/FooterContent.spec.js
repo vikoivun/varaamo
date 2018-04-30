@@ -65,4 +65,33 @@ describe('shared/footer/FooterContent', () => {
       expect(link.prop('to')).to.equal('/about');
     });
   });
+
+  describe('When Vantaa customization is used', () => {
+    let content;
+
+    before(() => {
+      simple.mock(customizationUtils, 'getCurrentCustomization').returnWith('VANTAA');
+      content = getWrapper();
+    });
+
+    after(() => {
+      simple.restore();
+    });
+
+    it('contains feedback link', () => {
+      const feedbackLink = content.find(FeedbackLink);
+      expect(feedbackLink.length).to.equal(1);
+    });
+
+    it('renders texts for Vantaa', () => {
+      const texts = content.find('p').text();
+      expect(texts).to.contain('Footer.vantaaText');
+    });
+
+    it('contains a link to about page', () => {
+      const link = content.find(Link).filter('.about-link');
+      expect(link).to.have.length(1);
+      expect(link.prop('to')).to.equal('/about');
+    });
+  });
 });
