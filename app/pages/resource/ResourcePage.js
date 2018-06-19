@@ -3,16 +3,23 @@ import moment from 'moment';
 import React, { Component, PropTypes } from 'react';
 import Loader from 'react-loader';
 import { connect } from 'react-redux';
+import { browserHistory } from 'react-router';
 import { bindActionCreators } from 'redux';
+import Col from 'react-bootstrap/lib/Col';
+import Panel from 'react-bootstrap/lib/Panel';
 
 import { fetchResource } from 'actions/resourceActions';
+import { clearReservations, toggleResourceMap } from 'actions/uiActions';
 import PageWrapper from 'pages/PageWrapper';
 import NotFoundPage from 'pages/not-found/NotFoundPage';
-import ReservationConfirmation from 'shared/reservation-confirmation';
+import ResourceCalendar from 'shared/resource-calendar';
+import ResourceMap from 'shared/resource-map';
 import { injectT } from 'i18n';
+import { getMaxPeriodText, getResourcePageUrl } from 'utils/resourceUtils';
 import ReservationCalendar from './reservation-calendar';
-import ReservationInfo from './reservation-info';
+import ResourceHeader from './resource-header';
 import ResourceInfo from './resource-info';
+import ResourceMapInfo from './resource-map-info';
 import resourcePageSelector from './resourcePageSelector';
 
 class UnconnectedResourcePage extends Component {
@@ -22,6 +29,7 @@ class UnconnectedResourcePage extends Component {
   }
 
   componentDidMount() {
+    this.props.actions.clearReservations();
     this.fetchResource();
   }
 
@@ -39,14 +47,33 @@ class UnconnectedResourcePage extends Component {
     actions.fetchResource(id, { start, end });
   }
 
+  handleDateChange = (newDate) => {
+    const { resource } = this.props;
+    const day = newDate.toISOString().substring(0, 10);
+    browserHistory.replace(getResourcePageUrl(resource, day));
+  }
+
+  handleBackButton() {
+    browserHistory.goBack();
+  }
+
+  orderImages(images) {
+    return [].concat(
+      images.filter(image => image.type === 'main'),
+      images.filter(image => image.type !== 'main'),
+    );
+  }
+
   render() {
     const {
-      isAdmin,
+      actions,
+      date,
       isFetchingResource,
       isLoggedIn,
       location,
       params,
       resource,
+      showMap,
       t,
       unit,
     } = this.props;
@@ -55,31 +82,72 @@ class UnconnectedResourcePage extends Component {
       return <NotFoundPage />;
     }
 
+    const maxPeriodText = getMaxPeriodText(t, resource);
+
+    const images = this.orderImages(resource.images || []);
+
     return (
-      <PageWrapper className="resource-page" title={resource.name || ''}>
+      <div className="app-ResourcePage">
         <Loader loaded={!isEmpty(resource)}>
-          <ResourceInfo
-            isAdmin={isAdmin}
+          <ResourceHeader
+            isLoggedIn={isLoggedIn}
+            onBackClick={this.handleBackButton}
+            onMapClick={actions.toggleResourceMap}
             resource={resource}
+            showMap={showMap}
             unit={unit}
           />
-          <h2 id="reservation-header">
-            {isLoggedIn ?
-              t('ResourcePage.reserveHeader') :
-              t('ResourcePage.reservationStatusHeader')
-            }
-          </h2>
-          <ReservationInfo
-            isLoggedIn={isLoggedIn}
-            resource={resource}
-          />
-          <ReservationCalendar
-            location={location}
-            params={params}
-          />
-          <ReservationConfirmation params={params} />
+          {showMap && unit &&
+            <ResourceMapInfo
+              resource={resource}
+              unit={unit}
+            />
+          }
+          {showMap &&
+            <ResourceMap
+              location={location}
+              resourceIds={[resource.id]}
+              selectedUnitId={unit ? unit.id : null}
+              showMap={showMap}
+            />
+          }
+          {!showMap &&
+            <PageWrapper title={resource.name || ''} transparent>
+              <div>
+                <Col className="app-ResourcePage__content" lg={8} md={8} xs={12}>
+                  <ResourceInfo
+                    isLoggedIn={isLoggedIn}
+                    resource={resource}
+                    unit={unit}
+                  />
+
+                  <Panel collapsible defaultExpanded header={t('ResourceInfo.reserveTitle')}>
+                    {`${t('ReservationInfo.reservationMaxLength')} ${maxPeriodText}`}
+                    <ResourceCalendar
+                      onDateChange={this.handleDateChange}
+                      resourceId={resource.id}
+                      selectedDate={date}
+                    />
+                    <ReservationCalendar
+                      location={location}
+                      params={params}
+                    />
+                  </Panel>
+                </Col>
+
+                <Col className="app-ResourceInfo__imgs-wrapper" lg={3} md={3} xs={12}>
+                  {images.map(image => (
+                    <div className="app-ResourceInfo__image-wrapper" key={image.url}>
+                      <img alt={image.caption} className="app-ResourceInfo__image" src={image.url} />
+                    </div>
+                  ))}
+                </Col>
+
+              </div>
+            </PageWrapper>
+          }
         </Loader>
-      </PageWrapper>
+      </div>
     );
   }
 }
@@ -88,12 +156,12 @@ UnconnectedResourcePage.propTypes = {
   actions: PropTypes.object.isRequired,
   date: PropTypes.string.isRequired,
   id: PropTypes.string.isRequired,
-  isAdmin: PropTypes.bool.isRequired,
   isFetchingResource: PropTypes.bool.isRequired,
   isLoggedIn: PropTypes.bool.isRequired,
   location: PropTypes.object.isRequired,
   params: PropTypes.object.isRequired,
   resource: PropTypes.object.isRequired,
+  showMap: PropTypes.bool.isRequired,
   t: PropTypes.func.isRequired,
   unit: PropTypes.object.isRequired,
 };
@@ -101,7 +169,9 @@ UnconnectedResourcePage = injectT(UnconnectedResourcePage);  // eslint-disable-l
 
 function mapDispatchToProps(dispatch) {
   const actionCreators = {
+    clearReservations,
     fetchResource,
+    toggleResourceMap,
   };
 
   return { actions: bindActionCreators(actionCreators, dispatch) };

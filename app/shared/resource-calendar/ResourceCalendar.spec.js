@@ -1,26 +1,25 @@
 import { expect } from 'chai';
 import mockDate from 'mockdate';
+import moment from 'moment';
 import React from 'react';
 import DayPicker from 'react-day-picker';
+import FormControl from 'react-bootstrap/lib/FormControl';
+import FormGroup from 'react-bootstrap/lib/FormGroup';
 import MomentLocaleUtils from 'react-day-picker/moment';
 import simple from 'simple-mock';
 
-import Resource from 'utils/fixtures/Resource';
 import { shallowWithIntl } from 'utils/testUtils';
 import {
   UnconnectedResourceCalendar as ResourceCalendar,
 } from './ResourceCalendar';
-
+import ResourceCalendarOverlay from './ResourceCalendarOverlay';
 
 describe('shared/resource-calendar/ResourceCalendar', () => {
-  const resource = Resource.build();
-
   const defaultProps = {
     availability: {},
     currentLanguage: 'en',
     selectedDate: '2015-10-11',
     onDateChange: simple.mock(),
-    resource,
   };
   function getWrapper(props) {
     return shallowWithIntl(<ResourceCalendar {...defaultProps} {...props} />);
@@ -39,8 +38,32 @@ describe('shared/resource-calendar/ResourceCalendar', () => {
     });
     dayWrapper = wrapper.find(DayPicker);
   });
+
   it('renders DayPicker', () => {
     expect(dayWrapper.length).to.equal(1);
+  });
+
+  it('renders FormGroup with correct props', () => {
+    const formGroup = wrapper.find(FormGroup);
+
+    expect(formGroup.length).to.equal(1);
+    expect(formGroup.prop('onClick')).to.equal(wrapper.instance().showOverlay);
+  });
+
+  it('renders FormControl with correct props', () => {
+    const formControl = wrapper.find(FormControl);
+    const expected = moment('2015-10-11').format('dddd D. MMMM YYYY');
+
+    expect(formControl.length).to.equal(1);
+    expect(formControl.prop('disabled')).to.be.true;
+    expect(formControl.prop('type')).to.equal('text');
+    expect(formControl.prop('value')).to.equal(expected);
+  });
+
+  it('renders ResourceCalendarOverlay with correct props', () => {
+    const resourceCalendarOverlay = wrapper.find(ResourceCalendarOverlay);
+
+    expect(resourceCalendarOverlay.length).to.equal(1);
   });
 
   it('renders a calendar-legend with correct labels', () => {
@@ -58,7 +81,7 @@ describe('shared/resource-calendar/ResourceCalendar', () => {
     expect(dayWrapper.prop('initialMonth')).to.deep.equal(new Date(defaultProps.selectedDate));
     expect(dayWrapper.prop('locale')).to.equal('en');
     expect(dayWrapper.prop('localeUtils')).to.equal(MomentLocaleUtils);
-    expect(dayWrapper.prop('onDayClick')).to.equal(defaultProps.onDateChange);
+    expect(dayWrapper.prop('onDayClick')).to.equal(wrapper.instance().handleDateChange);
     expect(dayWrapper.prop('selectedDays').getFullYear()).to.equal(2015);
     expect(dayWrapper.prop('selectedDays').getMonth()).to.equal(9);
     expect(dayWrapper.prop('selectedDays').getDate()).to.equal(11);
@@ -132,6 +155,38 @@ describe('shared/resource-calendar/ResourceCalendar', () => {
       expect(func(new Date('2015-10-02'))).to.be.false;
       expect(func(new Date('2015-10-03'))).to.be.false;
       expect(func(new Date('2015-10-04'))).to.be.false;
+    });
+  });
+
+  describe('handleDateChange', () => {
+    it('sets state visible false and calls prop onDateChange', () => {
+      const onDateChange = simple.stub();
+      const date = new Date('2015-10-01');
+      const instance = getWrapper({ onDateChange }).instance();
+      instance.state.visible = true;
+      instance.handleDateChange(date);
+
+      expect(instance.state.visible).to.be.false;
+      expect(onDateChange.callCount).to.equal(1);
+      expect(onDateChange.lastCall.args).to.deep.equal([date]);
+    });
+  });
+
+  describe('hideOverlay', () => {
+    it('sets state.visible to false', () => {
+      const instance = getWrapper().instance();
+      instance.state.visible = true;
+      instance.hideOverlay();
+      expect(instance.state.visible).to.be.false;
+    });
+  });
+
+  describe('showOverlay', () => {
+    it('sets state.visible to true', () => {
+      const instance = getWrapper().instance();
+      instance.state.visible = false;
+      instance.showOverlay();
+      expect(instance.state.visible).to.be.true;
     });
   });
 });

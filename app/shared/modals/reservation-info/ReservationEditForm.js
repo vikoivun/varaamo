@@ -7,6 +7,7 @@ import ControlLabel from 'react-bootstrap/lib/ControlLabel';
 import Form from 'react-bootstrap/lib/Form';
 import FormControl from 'react-bootstrap/lib/FormControl';
 import FormGroup from 'react-bootstrap/lib/FormGroup';
+import Well from 'react-bootstrap/lib/Well';
 import { Field, Fields, reduxForm } from 'redux-form';
 
 import FormTypes from 'constants/FormTypes';
@@ -84,6 +85,14 @@ class UnconnectedReservationEditForm extends Component {
     return this.renderInfoRow(label, value);
   }
 
+  renderUserInfoRow(userPropertyName, labelName) {
+    const { reservation, t } = this.props;
+    const user = reservation.user || {};
+    const value = user[userPropertyName];
+    const label = t(`common.${labelName}Label`);
+    return this.renderInfoRow(label, value);
+  }
+
   renderReservationTime() {
     const { isEditing, reservation, resource, t } = this.props;
     if (isEditing) {
@@ -129,6 +138,10 @@ class UnconnectedReservationEditForm extends Component {
         horizontal
         onSubmit={handleSubmit}
       >
+        <Well>
+          {this.renderUserInfoRow('displayName', 'userName')}
+          {this.renderUserInfoRow('email', 'userEmail')}
+        </Well>
         {this.renderEditableInfoRow('eventSubject', 'text')}
         {this.renderStaticInfoRow('reserverName')}
         {this.renderEditableInfoRow('eventDescription', 'textarea')}

@@ -1,40 +1,66 @@
 import React, { Component, PropTypes } from 'react';
 import { findDOMNode } from 'react-dom';
 import Loader from 'react-loader';
+import { connect } from 'react-redux';
 
+import ResourceCompactList from 'shared/resource-compact-list';
 import ResourceList from 'shared/resource-list';
-import { injectT } from 'i18n';
 import { scrollTo } from 'utils/domUtils';
-import ResultsCount from './ResultsCount';
+import SearchResultsPaging from './SearchResultsPaging';
+import searchResultsSelector from './searchResultsSelector';
 
-class SearchResults extends Component {
+export class UnconnectedSearchResults extends Component {
   componentDidMount() {
     scrollTo(findDOMNode(this));
   }
 
   render() {
-    const { isFetching, searchResultIds, t } = this.props;
-
+    const {
+      filters,
+      isFetching,
+      location,
+      resultCount,
+      searchResultIds,
+      selectedUnitId,
+      showMap,
+    } = this.props;
     return (
-      <div id="search-results">
+      <div className="app-SearchResults" id="search-results">
         <Loader loaded={!isFetching}>
-          <ResultsCount
-            emptyMessage={t('SearchResults.emptyMessage')}
-            resultIds={searchResultIds}
-          />
-          <ResourceList
-            resourceIds={searchResultIds}
-          />
+          {!showMap &&
+            <div className="app-SearchResults__container">
+              <ResourceList
+                date={filters.date}
+                location={location}
+                resourceIds={searchResultIds}
+              />
+              <SearchResultsPaging
+                filters={filters}
+                resultCount={resultCount}
+              />
+            </div>
+          }
+          {showMap && selectedUnitId &&
+            <ResourceCompactList
+              date={filters.date}
+              location={location}
+              resourceIds={searchResultIds}
+            />
+          }
         </Loader>
       </div>
     );
   }
 }
 
-SearchResults.propTypes = {
+UnconnectedSearchResults.propTypes = {
+  filters: PropTypes.object.isRequired,
   isFetching: PropTypes.bool.isRequired,
+  location: PropTypes.object.isRequired,
+  resultCount: PropTypes.number.isRequired,
   searchResultIds: PropTypes.array.isRequired,
-  t: PropTypes.func.isRequired,
+  selectedUnitId: PropTypes.string,
+  showMap: PropTypes.bool.isRequired,
 };
 
-export default injectT(SearchResults);
+export default connect(searchResultsSelector)(UnconnectedSearchResults);

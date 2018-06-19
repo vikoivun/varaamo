@@ -1,10 +1,26 @@
 import filter from 'lodash/filter';
+import find from 'lodash/find';
 import forEach from 'lodash/forEach';
 import moment from 'moment';
 import queryString from 'query-string';
 
 import constants from 'constants/AppConstants';
 import { getCurrentReservation, getNextAvailableTime } from 'utils/reservationUtils';
+
+function hasMaxReservations(resource) {
+  let isMaxReservations = false;
+  if (resource.maxReservationsPerUser && resource.reservations) {
+    const ownReservations = filter(resource.reservations, { isOwn: true });
+    let reservationCounter = 0;
+    forEach(ownReservations, (reservation) => {
+      if (moment(reservation.end).isAfter(moment())) {
+        reservationCounter += 1;
+      }
+    });
+    isMaxReservations = reservationCounter >= resource.maxReservationsPerUser;
+  }
+  return isMaxReservations;
+}
 
 function isOpenNow(resource) {
   const { closes, opens } = getOpeningHours(resource);
@@ -15,8 +31,8 @@ function isOpenNow(resource) {
   return false;
 }
 
-function getAvailabilityDataForNow(resource = {}) {
-  const { closes, opens } = getOpeningHours(resource);
+function getAvailabilityDataForNow(resource = {}, date = null) {
+  const { closes, opens } = getOpeningHours(resource, date);
   const reservations = getOpenReservations(resource);
 
   if (!closes || !opens) {
@@ -49,7 +65,7 @@ function getAvailabilityDataForNow(resource = {}) {
 }
 
 function getAvailabilityDataForWholeDay(resource = {}, date = null) {
-  const { closes, opens } = getOpeningHours(resource);
+  const { closes, opens } = getOpeningHours(resource, date);
   const reservations = getOpenReservations(resource);
 
   if (!closes || !opens) {
@@ -66,6 +82,9 @@ function getAvailabilityDataForWholeDay(resource = {}, date = null) {
 
   forEach(reservations, (reservation) => {
     const resBeginMoment = moment(reservation.begin);
+    if (!resBeginMoment.isSame(opensMoment, 'd')) {
+      return;
+    }
     const resEndMoment = moment(reservation.end);
     total = (total - resEndMoment) + resBeginMoment;
   });
@@ -84,6 +103,21 @@ function getAvailabilityDataForWholeDay(resource = {}, date = null) {
   };
 }
 
+function getHourlyPrice(t, { minPricePerHour, maxPricePerHour }) {
+  if (!(minPricePerHour || maxPricePerHour)) {
+    return t('ResourceIcons.free');
+  }
+  if ((minPricePerHour && maxPricePerHour) && (minPricePerHour !== maxPricePerHour)) {
+    return `${Number(minPricePerHour)} - ${Number(maxPricePerHour)} €/h`;
+  }
+  const priceString = maxPricePerHour || minPricePerHour;
+  const price = priceString !== 0 ? Number(priceString) : 0;
+  if (price === 0) {
+    return t('ResourceIcons.free');
+  }
+  return price ? `${price} €/h` : null;
+}
+
 function getHumanizedPeriod(period) {
   if (!period) {
     return '';
@@ -91,8 +125,24 @@ function getHumanizedPeriod(period) {
   return `${moment.duration(period).hours()} h`;
 }
 
-function getOpeningHours(resource) {
+function getMaxPeriodText(t, { maxPeriod }) {
+  const hours = moment.duration(maxPeriod).asHours();
+  const days = parseInt(moment.duration(maxPeriod).asDays(), 10);
+  if (days > 0) {
+    return t('ResourceHeader.maxPeriodDays', { days });
+  }
+  return t('ResourceHeader.maxPeriodHours', { hours });
+}
+
+function getOpeningHours(resource, selectedDate) {
   if (resource && resource.openingHours && resource.openingHours.length) {
+    if (selectedDate) {
+      const openingHours = find(resource.openingHours, ({ date }) => date === selectedDate);
+      return openingHours ? {
+        closes: openingHours.closes,
+        opens: openingHours.opens,
+      } : {};
+    }
     return {
       closes: resource.openingHours[0].closes,
       opens: resource.openingHours[0].opens,
@@ -143,10 +193,13 @@ function reservingIsRestricted(resource, date) {
 }
 
 export {
+  hasMaxReservations,
   isOpenNow,
   getAvailabilityDataForNow,
   getAvailabilityDataForWholeDay,
+  getHourlyPrice,
   getHumanizedPeriod,
+  getMaxPeriodText,
   getOpeningHours,
   getOpenReservations,
   getResourcePageUrl,

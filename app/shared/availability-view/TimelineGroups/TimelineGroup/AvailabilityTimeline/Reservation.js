@@ -52,7 +52,7 @@ function Reservation({ onClick, ...reservation }) {
   return (
     <Link
       className={classnames('reservation-link', { 'with-comments': reservation.comments })}
-      onClick={() => onClick && onClick(reservation)}
+      onClick={() => onClick && reservation.userPermissions.canModify && onClick(reservation)}
     >
       <OverlayTrigger
         overlay={popover}
@@ -60,7 +60,10 @@ function Reservation({ onClick, ...reservation }) {
         trigger={['hover', 'focus']}
       >
         <div
-          className={classnames('reservation', { requested: reservation.state === 'requested' })}
+          className={classnames('reservation',
+          { requested: reservation.state === 'requested' },
+          { disabled: reservation.state === 'confirmed' && !reservation.isOwn && !reservation.userPermissions.canModify },
+          { reserved: reservation.state === 'confirmed' && !reservation.isOwn && reservation.userPermissions.canModify })}
           style={{ width }}
         >
           <div className="names">

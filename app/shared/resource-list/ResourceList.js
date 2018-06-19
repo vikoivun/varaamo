@@ -1,25 +1,34 @@
 import React, { PropTypes } from 'react';
 
-import ResourceListItem from './ResourceListItemContainer';
+import ResourceCard from 'shared/resource-card';
 
-function renderResourceListItem(resourceId) {
-  return <ResourceListItem key={resourceId} resourceId={resourceId} />;
-}
 
-function ResourceList({ emptyMessage, resourceIds }) {
+function ResourceList({ date, emptyMessage, location, resourceIds }) {
+  function renderResourceListItem(resourceId) {
+    return (
+      <ResourceCard
+        date={date}
+        key={resourceId}
+        location={location}
+        resourceId={resourceId}
+      />
+    );
+  }
   if (!resourceIds.length) {
     return emptyMessage ? <p>{emptyMessage}</p> : <div />;
   }
 
   return (
-    <ul className="resource-list">
+    <div className="resource-list">
       {resourceIds.map(renderResourceListItem)}
-    </ul>
+    </div>
   );
 }
 
 ResourceList.propTypes = {
+  date: PropTypes.string.isRequired,
   emptyMessage: PropTypes.string,
+  location: PropTypes.object.isRequired,
   resourceIds: PropTypes.array.isRequired,
 };
 

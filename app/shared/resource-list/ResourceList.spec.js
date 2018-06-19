@@ -3,13 +3,19 @@ import { shallow } from 'enzyme';
 import React from 'react';
 import Immutable from 'seamless-immutable';
 
+import ResourceCard from 'shared/resource-card';
 import ResourceList from './ResourceList';
-import ResourceListItem from './ResourceListItemContainer';
 
 describe('shared/resource-list/ResourceList', () => {
   const defaultProps = {
     emptyMessage: 'Some empty message',
+    location: {
+      state: {
+        scrollTop: 123,
+      },
+    },
     resourceIds: Immutable(['resource-1', 'resource-2']),
+    date: '2017-01-01',
   };
 
   function getWrapper(extraProps) {
@@ -23,9 +29,8 @@ describe('shared/resource-list/ResourceList', () => {
       wrapper = getWrapper();
     });
 
-    it('renders a list', () => {
-      const list = wrapper.find('ul');
-      expect(list.length).to.equal(1);
+    it('renders a div', () => {
+      expect(wrapper.is('div')).to.be.true;
     });
 
     it('does not render the empty message', () => {
@@ -33,20 +38,21 @@ describe('shared/resource-list/ResourceList', () => {
       expect(emptyMessage.length).to.equal(0);
     });
 
-    describe('rendering individual ResourceListItems', () => {
-      let resourceListItems;
+    describe('rendering individual ResourceCards', () => {
+      let resourceCards;
 
       before(() => {
-        resourceListItems = wrapper.find(ResourceListItem);
+        resourceCards = wrapper.find(ResourceCard);
       });
 
-      it('renders a ResourceListItem for every resource in props', () => {
-        expect(resourceListItems.length).to.equal(defaultProps.resourceIds.length);
+      it('renders a ResourceCard for every resource in props', () => {
+        expect(resourceCards.length).to.equal(defaultProps.resourceIds.length);
       });
 
-      it('passes correct props to ResourceListItem', () => {
-        resourceListItems.forEach((resourceListItem, index) => {
+      it('passes correct props to ResourceCard', () => {
+        resourceCards.forEach((resourceListItem, index) => {
           expect(resourceListItem.props().resourceId).to.equal(defaultProps.resourceIds[index]);
+          expect(resourceListItem.props().date).to.equal(defaultProps.date);
         });
       });
     });

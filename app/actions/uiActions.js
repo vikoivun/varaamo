@@ -37,6 +37,30 @@ const closeReservationSuccessModal = createAction(
   () => ModalTypes.RESERVATION_SUCCESS
 );
 
+const closeResourceTermsModal = createAction(
+  types.UI.CLOSE_MODAL,
+  () => ModalTypes.RESOURCE_TERMS
+);
+
+const disableGeoposition = createAction(types.UI.DISABLE_GEOPOSITION);
+const disableTimeRange = createAction(types.UI.DISABLE_TIME_RANGE);
+const enableGeopositionRequest = createAction(types.UI.ENABLE_GEOPOSITION_REQUEST);
+const enableGeopositionSuccess = createAction(types.UI.ENABLE_GEOPOSITION_SUCCESS);
+const enableGeopositionError = createAction(types.UI.ENABLE_GEOPOSITION_ERROR);
+
+const enableGeoposition = () => (dispatch) => {
+  dispatch(enableGeopositionRequest());
+  if (!navigator.geolocation) {
+    dispatch(enableGeopositionError());
+  }
+  navigator.geolocation.getCurrentPosition(
+    position => dispatch(enableGeopositionSuccess(position)),
+    error => dispatch(enableGeopositionError(error)),
+  );
+};
+
+const enableTimeRange = createAction(types.UI.ENABLE_TIME_RANGE);
+
 const filterAdminResourceType = createAction(types.UI.FILTER_ADMIN_RESOURCE_TYPE);
 
 const hideReservationInfoModal = createAction(types.UI.HIDE_RESERVATION_INFO_MODAL);
@@ -56,6 +80,10 @@ const openReservationCommentModal = createAction(
   () => ModalTypes.RESERVATION_COMMENT
 );
 
+const selectReservationSlot = createAction(
+  types.UI.SELECT_RESERVATION_SLOT,
+);
+
 const selectReservationToCancel = createAction(
   types.UI.SELECT_RESERVATION_TO_CANCEL
 );
@@ -68,11 +96,18 @@ const selectReservationToShow = createAction(
   types.UI.SELECT_RESERVATION_TO_SHOW
 );
 
+const openResourceTermsModal = createAction(
+  types.UI.OPEN_MODAL,
+  () => ModalTypes.RESOURCE_TERMS
+);
+
 const showReservationInfoModal = createAction(types.UI.SHOW_RESERVATION_INFO_MODAL);
 
 const startReservationEditInInfoModal = createAction(types.UI.START_RESERVATION_EDIT_IN_INFO_MODAL);
 
 const toggleTimeSlot = createAction(types.UI.TOGGLE_TIME_SLOT);
+
+const toggleResourceMap = createAction(types.UI.TOGGLE_RESOURCE_SHOW_MAP);
 
 const unfilterAdminResourceType = createAction(types.UI.UNFILTER_ADMIN_RESOURCE_TYPE);
 
@@ -87,16 +122,24 @@ export {
   closeReservationCancelModal,
   closeReservationCommentModal,
   closeReservationSuccessModal,
+  closeResourceTermsModal,
+  disableGeoposition,
+  disableTimeRange,
+  enableGeoposition,
+  enableTimeRange,
   filterAdminResourceType,
   hideReservationInfoModal,
   openConfirmReservationModal,
   openReservationCancelModal,
   openReservationCommentModal,
+  openResourceTermsModal,
   selectReservationToCancel,
   selectReservationToEdit,
+  selectReservationSlot,
   selectReservationToShow,
   showReservationInfoModal,
   startReservationEditInInfoModal,
+  toggleResourceMap,
   toggleTimeSlot,
   unfilterAdminResourceType,
 };

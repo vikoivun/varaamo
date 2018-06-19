@@ -2,8 +2,11 @@ import includes from 'lodash/includes';
 import React, { Component, PropTypes } from 'react';
 import Button from 'react-bootstrap/lib/Button';
 import Form from 'react-bootstrap/lib/Form';
+import Col from 'react-bootstrap/lib/Col';
+import ControlLabel from 'react-bootstrap/lib/ControlLabel';
+import FormGroup from 'react-bootstrap/lib/FormGroup';
 import Well from 'react-bootstrap/lib/Well';
-import { Field, reduxForm } from 'redux-form';
+import { Field, Fields, reduxForm } from 'redux-form';
 import isEmail from 'validator/lib/isEmail';
 
 import constants from 'constants/AppConstants';
@@ -11,6 +14,7 @@ import FormTypes from 'constants/FormTypes';
 import WrappedText from 'shared/wrapped-text';
 import ReduxFormField from 'shared/form-fields/ReduxFormField';
 import { injectT } from 'i18n';
+import TimeControls from './TimeControls';
 
 const validators = {
   reserverEmailAddress: (t, { reserverEmailAddress }) => {
@@ -87,11 +91,35 @@ class UnconnectedReservationForm extends Component {
     );
   }
 
+  renderTimeControls = () => {
+    const { fields, maxReservationPeriod, t, timeSlots } = this.props;
+    if (!includes(fields, 'begin') || !includes(fields, 'end')) {
+      return null;
+    }
+
+    return (
+      <FormGroup id="reservation-time">
+        <Col sm={3}>
+          <ControlLabel>{t('common.reservationTimeLabel')}</ControlLabel>
+        </Col>
+        <Col sm={9}>
+          <Fields
+            component={TimeControls}
+            maxReservationPeriod={maxReservationPeriod}
+            names={['begin', 'end']}
+            timeSlots={timeSlots}
+          />
+        </Col>
+      </FormGroup>
+    );
+  }
+
   render() {
     const {
+      isEditing,
       isMakingReservations,
       handleSubmit,
-      onClose,
+      onCancel,
       onConfirm,
       requiredFields,
       staffEventSelected,
@@ -106,6 +134,7 @@ class UnconnectedReservationForm extends Component {
     return (
       <div>
         <Form className="reservation-form" horizontal>
+          {this.renderTimeControls()}
           { includes(this.props.fields, 'staffEvent') && (
             <Well>
               {this.renderField(
@@ -224,9 +253,9 @@ class UnconnectedReservationForm extends Component {
           <div className="form-controls">
             <Button
               bsStyle="default"
-              onClick={onClose}
+              onClick={onCancel}
             >
-              {t('common.back')}
+              {isEditing ? t('common.cancel') : t('common.back')}
             </Button>
             <Button
               bsStyle="primary"
@@ -245,14 +274,17 @@ class UnconnectedReservationForm extends Component {
 
 UnconnectedReservationForm.propTypes = {
   fields: PropTypes.array.isRequired,
+  isEditing: PropTypes.bool.isRequired,
   isMakingReservations: PropTypes.bool.isRequired,
   handleSubmit: PropTypes.func.isRequired,
-  onClose: PropTypes.func.isRequired,
+  maxReservationPeriod: PropTypes.string,
+  onCancel: PropTypes.func.isRequired,
   onConfirm: PropTypes.func.isRequired,
   requiredFields: PropTypes.array.isRequired,
   staffEventSelected: PropTypes.bool,
   t: PropTypes.func.isRequired,
   termsAndConditions: PropTypes.string.isRequired,
+  timeSlots: PropTypes.array,
 };
 UnconnectedReservationForm = injectT(UnconnectedReservationForm);  // eslint-disable-line
 

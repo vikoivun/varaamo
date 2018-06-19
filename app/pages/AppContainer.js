@@ -1,23 +1,35 @@
+import MobileDetect from 'mobile-detect';
 import React, { Component, PropTypes } from 'react';
+import BodyClassName from 'react-body-classname';
 import Grid from 'react-bootstrap/lib/Grid';
 import DocumentTitle from 'react-document-title';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 
 import { fetchUser } from 'actions/userActions';
+import { enableGeoposition } from 'actions/uiActions';
 import Favicon from 'shared/favicon';
-import TestSiteMessage from 'shared/test-site-message';
 import Footer from 'shared/footer';
-import Navbar from 'shared/navbar';
+import Header from 'shared/header';
+import TestSiteMessage from 'shared/test-site-message';
 import Notifications from 'shared/notifications';
 import { getCustomizationClassName } from 'utils/customizationUtils';
 
 const userIdSelector = state => state.auth.userId;
+
 export const selector = createStructuredSelector({
   userId: userIdSelector,
 });
 
 export class UnconnectedAppContainer extends Component {
+  constructor(props) {
+    super(props);
+    const mobileDetect = new MobileDetect(window.navigator.userAgent);
+    if (mobileDetect.mobile()) {
+      props.enableGeoposition();
+    }
+  }
+
   getChildContext() {
     return {
       location: this.props.location,
@@ -38,26 +50,30 @@ export class UnconnectedAppContainer extends Component {
 
   render() {
     return (
-      <DocumentTitle title="Varaamo">
-        <div className={`app ${getCustomizationClassName()}`}>
-          <Favicon />
-          <TestSiteMessage />
-          <Navbar />
-          <div className="app-content">
-            <Grid>
-              <Notifications />
-            </Grid>
-            {this.props.children}
+      <BodyClassName className={getCustomizationClassName()} >
+        <DocumentTitle title="Varaamo">
+          <div className="app">
+            <Header location={this.props.location}>
+              <Favicon />
+              <TestSiteMessage />
+            </Header>
+            <div className="app-content">
+              <Grid>
+                <Notifications />
+              </Grid>
+              {this.props.children}
+            </div>
+            <Footer />
           </div>
-          <Footer />
-        </div>
-      </DocumentTitle>
+        </DocumentTitle>
+      </BodyClassName>
     );
   }
 }
 
 UnconnectedAppContainer.propTypes = {
   children: PropTypes.node,
+  enableGeoposition: PropTypes.func.isRequired,
   fetchUser: PropTypes.func.isRequired,
   location: PropTypes.object.isRequired,
   userId: PropTypes.string,
@@ -67,6 +83,6 @@ UnconnectedAppContainer.childContextTypes = {
   location: React.PropTypes.object,
 };
 
-const actions = { fetchUser };
+const actions = { enableGeoposition, fetchUser };
 
 export default connect(selector, actions)(UnconnectedAppContainer);

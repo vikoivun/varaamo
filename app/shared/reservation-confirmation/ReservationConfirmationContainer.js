@@ -1,63 +1,52 @@
-import forEach from 'lodash/forEach';
-import tail from 'lodash/tail';
 import React, { Component, PropTypes } from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
+import { first, last, orderBy } from 'lodash';
 
 import { deleteReservation, postReservation, putReservation } from 'actions/reservationActions';
-import { closeConfirmReservationModal, openConfirmReservationModal } from 'actions/uiActions';
+import {
+  cancelReservationEdit,
+  closeConfirmReservationModal,
+  openConfirmReservationModal,
+} from 'actions/uiActions';
 import recurringReservationsConnector from 'state/recurringReservations';
 import ConfirmReservationModal from './ConfirmReservationModal';
 import reservationConfirmationSelector from './reservationConfirmationSelector';
 
 export class UnconnectedReservationConfirmationContainer extends Component {
-  constructor(props) {
-    super(props);
-    this.handleEdit = this.handleEdit.bind(this);
-    this.handleReservation = this.handleReservation.bind(this);
+  static propTypes = {
+    actions: PropTypes.object.isRequired,
+    confirmReservationModalIsOpen: PropTypes.bool.isRequired,
+    isMakingReservations: PropTypes.bool.isRequired,
+    isStaff: PropTypes.bool.isRequired,
+    params: PropTypes.shape({ // eslint-disable-line react/no-unused-prop-types
+      id: PropTypes.string.isRequired,
+    }).isRequired,
+    recurringReservations: PropTypes.array.isRequired,
+    reservationsToEdit: PropTypes.array.isRequired,
+    resource: PropTypes.object.isRequired,
+    showTimeControls: PropTypes.bool,
+    selectedReservations: PropTypes.array.isRequired,
+    staffEventSelected: PropTypes.bool,
+    timeSlots: PropTypes.array,
+  };
+
+  handleEdit = (values = {}) => {
+    const { actions, reservationsToEdit } = this.props;
+    actions.putReservation({
+      ...reservationsToEdit[0],
+      ...values,
+    });
   }
 
-  handleEdit(values = {}) {
-    const {
-      actions,
-      reservationsToEdit,
-      selectedReservations,
-    } = this.props;
-
-    if (selectedReservations.length) {
-      // Edit the first selected reservation.
-      actions.putReservation(Object.assign(
-        {},
-        selectedReservations[0],
-        values,
-        { url: reservationsToEdit[0].url }
-      ));
-
-      // Add new reservations if needed.
-      // FIXME: This is very hacky and not bulletproof but use cases where user splits
-      // one reservation into multiple reservations should be pretty rare.
-      // Try to use something sequential in the future.
-      // Use timeout to allow the PUT request to go through first and possibly free previously
-      // reserved time slots.
-      setTimeout(() => {
-        forEach(tail(selectedReservations), (reservation) => {
-          actions.postReservation(
-            Object.assign({}, reservation, values)
-          );
-        });
-      }, 800);
-    } else {
-      // Delete the edited reservation if no time slots were selected.
-      forEach(reservationsToEdit, (reservation) => {
-        actions.deleteReservation(reservation);
-      });
-    }
-  }
-
-  handleReservation(values = {}) {
+  handleReservation = (values = {}) => {
     const { actions, recurringReservations, resource, selectedReservations } = this.props;
+    const orderedReservations = orderBy(selectedReservations, 'begin');
+    const selectedReservation = Object.assign({}, first(orderedReservations));
+    selectedReservation.end = last(orderedReservations).end;
+    const mergedReservations = [selectedReservation];
 
-    [...selectedReservations, ...recurringReservations].forEach((reservation) => {
+    [...mergedReservations, ...recurringReservations].forEach((reservation) => {
       actions.postReservation({
         ...reservation,
         ...values,
@@ -76,7 +65,9 @@ export class UnconnectedReservationConfirmationContainer extends Component {
       reservationsToEdit,
       resource,
       selectedReservations,
+      showTimeControls,
       staffEventSelected,
+      timeSlots,
     } = this.props;
 
     const isAdmin = resource.userPermissions.isAdmin;
@@ -89,6 +80,7 @@ export class UnconnectedReservationConfirmationContainer extends Component {
         isMakingReservations={isMakingReservations}
         isPreliminaryReservation={resource.needManualConfirmation}
         isStaff={isStaff}
+        onCancel={actions.cancelReservationEdit}
         onClose={actions.closeConfirmReservationModal}
         onConfirm={isEditing ? this.handleEdit : this.handleReservation}
         onRemoveReservation={actions.removeReservation}
@@ -97,29 +89,17 @@ export class UnconnectedReservationConfirmationContainer extends Component {
         resource={resource}
         selectedReservations={selectedReservations}
         show={confirmReservationModalIsOpen}
+        showTimeControls={showTimeControls}
         staffEventSelected={staffEventSelected}
+        timeSlots={timeSlots}
       />
     );
   }
 }
 
-UnconnectedReservationConfirmationContainer.propTypes = {
-  actions: PropTypes.object.isRequired,
-  confirmReservationModalIsOpen: PropTypes.bool.isRequired,
-  isMakingReservations: PropTypes.bool.isRequired,
-  isStaff: PropTypes.bool.isRequired,
-  params: PropTypes.shape({ // eslint-disable-line react/no-unused-prop-types
-    id: PropTypes.string.isRequired,
-  }).isRequired,
-  recurringReservations: PropTypes.array.isRequired,
-  reservationsToEdit: PropTypes.array.isRequired,
-  resource: PropTypes.object.isRequired,
-  selectedReservations: PropTypes.array.isRequired,
-  staffEventSelected: PropTypes.bool,
-};
-
 function mapDispatchToProps(dispatch) {
   const actionCreators = {
+    cancelReservationEdit,
     closeConfirmReservationModal,
     deleteReservation,
     openConfirmReservationModal,

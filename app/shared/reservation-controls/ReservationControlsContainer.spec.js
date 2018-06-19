@@ -6,7 +6,7 @@ import simple from 'simple-mock';
 
 import Reservation from 'utils/fixtures/Reservation';
 import Resource from 'utils/fixtures/Resource';
-import { getResourcePageUrl } from 'utils/resourceUtils';
+import { getEditReservationUrl } from 'utils/reservationUtils';
 import ReservationControls from './ReservationControls';
 import {
   UnconnectedReservationControlsContainer as ReservationControlsContainer,
@@ -19,6 +19,7 @@ describe('shared/reservation-controls/ReservationControlsContainer', () => {
     actions: {
       confirmPreliminaryReservation: simple.stub(),
       denyPreliminaryReservation: simple.stub(),
+      openConfirmReservationModal: simple.stub(),
       openReservationCancelModal: simple.stub(),
       selectReservationToCancel: simple.stub(),
       selectReservationToEdit: simple.stub(),
@@ -100,11 +101,7 @@ describe('shared/reservation-controls/ReservationControlsContainer', () => {
 
     it('calls browserHistory.push with correct path', () => {
       const actualPath = browserHistoryMock.lastCall.args[0];
-      const expectedPath = getResourcePageUrl(
-        props.resource,
-        props.reservation.begin,
-        props.reservation.begin
-      );
+      const expectedPath = getEditReservationUrl(props.reservation);
 
       expect(browserHistoryMock.callCount).to.equal(1);
       expect(actualPath).to.equal(expectedPath);

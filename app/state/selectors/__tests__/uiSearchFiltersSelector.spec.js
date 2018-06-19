@@ -3,15 +3,22 @@ import MockDate from 'mockdate';
 
 import uiSearchFiltersSelector from 'state/selectors/uiSearchFiltersSelector';
 
-function getState(date = '2015-10-10') {
+function getState(date = '2015-10-10', start = '08:30') {
   return {
     ui: {
       search: {
         filters: {
+          charge: false,
           date,
+          distance: '',
+          duration: 30,
+          end: '23:30',
+          page: 1,
           people: '',
           purpose: 'some-purpose',
           search: '',
+          start,
+          unit: '',
         },
       },
     },

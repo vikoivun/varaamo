@@ -1,15 +1,13 @@
 import { expect } from 'chai';
+import moment from 'moment';
 import React from 'react';
-import Glyphicon from 'react-bootstrap/lib/Glyphicon';
-import Label from 'react-bootstrap/lib/Label';
 import Immutable from 'seamless-immutable';
 import simple from 'simple-mock';
 
-import Reservation from 'utils/fixtures/Reservation';
 import Resource from 'utils/fixtures/Resource';
 import TimeSlotFixture from 'utils/fixtures/TimeSlot';
 import { shallowWithIntl } from 'utils/testUtils';
-import TimeSlot, { getLabelData } from './TimeSlot';
+import TimeSlot from './TimeSlot';
 
 describe('pages/resource/reservation-calendar/time-slots/TimeSlot', () => {
   const defaultProps = {
@@ -17,7 +15,7 @@ describe('pages/resource/reservation-calendar/time-slots/TimeSlot', () => {
     isAdmin: false,
     isEditing: true,
     isLoggedIn: true,
-    isStaff: false,
+    isSelectable: true,
     onClick: simple.stub(),
     resource: Resource.build(),
     selected: false,
@@ -28,170 +26,164 @@ describe('pages/resource/reservation-calendar/time-slots/TimeSlot', () => {
     return shallowWithIntl(<TimeSlot {...defaultProps} {...extraProps} />);
   }
 
-  describe('getLabelData', () => {
-    describe('when time is in the past', () => {
-      const isPast = true;
+  it('renders button.app-TimeSlot', () => {
+    expect(getWrapper().is('button.app-TimeSlot')).to.be.true;
+  });
 
-      it('returns correct data if slot is being edited', () => {
-        const slot = { editing: true };
-        const labelData = getLabelData({ isPast, slot });
-        const expected = { bsStyle: 'default', messageId: 'TimeSlot.editing' };
+  it('renders slot start time as button text', () => {
+    const expected = moment(defaultProps.slot.start).format('HH:mm');
+    expect(getWrapper().text()).to.contain(expected);
+  });
 
-        expect(labelData).to.deep.equal(expected);
-      });
+  describe('button onClick when user is not logged in', () => {
+    let instance;
+    let wrapper;
 
-      it('returns correct data if slot is reserved', () => {
-        const slot = { reserved: true };
-        const labelData = getLabelData({ isPast, slot });
-        const expected = { bsStyle: 'default', messageId: 'TimeSlot.reserved' };
-
-        expect(labelData).to.deep.equal(expected);
-      });
-
-      it('returns correct data if slot contains own reservation', () => {
-        const slot = { reserved: true };
-        const isOwnReservation = true;
-        const labelData = getLabelData({ isOwnReservation, isPast, slot });
-        const expected = { bsStyle: 'default', messageId: 'TimeSlot.ownReservation' };
-
-        expect(labelData).to.deep.equal(expected);
-      });
-
-      it('returns correct data if slot is not reserved', () => {
-        const slot = { reserved: false };
-        const labelData = getLabelData({ isPast, slot });
-        const expected = { bsStyle: 'default', messageId: 'TimeSlot.available' };
-
-        expect(labelData).to.deep.equal(expected);
-      });
+    before(() => {
+      wrapper = getWrapper({ isLoggedIn: false });
+      instance = wrapper.instance();
+      instance.handleClick = simple.mock();
     });
 
-    describe('when time is not in the past', () => {
-      const isPast = false;
+    afterEach(() => {
+      instance.handleClick.reset();
+    });
 
-      it('returns correct data if slot is being edited', () => {
-        const slot = { editing: true };
-        const labelData = getLabelData({ isPast, slot });
-        const expected = { bsStyle: 'info', messageId: 'TimeSlot.editing' };
+    after(() => {
+      simple.restore();
+    });
 
-        expect(labelData).to.deep.equal(expected);
-      });
-
-      it('returns correct data if slot is reserved', () => {
-        const slot = { reserved: true };
-        const labelData = getLabelData({ isPast, slot });
-        const expected = { bsStyle: 'danger', messageId: 'TimeSlot.reserved' };
-
-        expect(labelData).to.deep.equal(expected);
-      });
-
-      it('returns correct data if slot contains own reservation', () => {
-        const slot = { reserved: true };
-        const isOwnReservation = true;
-        const labelData = getLabelData({ isOwnReservation, isPast, slot });
-        const expected = { bsStyle: 'info', messageId: 'TimeSlot.ownReservation' };
-
-        expect(labelData).to.deep.equal(expected);
-      });
-
-      it('returns correct data if slot is not reserved', () => {
-        const slot = { reserved: false };
-        const labelData = getLabelData({ isPast, slot });
-        const expected = { bsStyle: 'success', messageId: 'TimeSlot.available' };
-
-        expect(labelData).to.deep.equal(expected);
-      });
+    it('calls handleClick with disabled true', () => {
+      expect(wrapper.prop('onClick')).to.be.a('function');
+      wrapper.prop('onClick')();
+      expect(instance.handleClick.callCount).to.equal(1);
+      expect(instance.handleClick.lastCall.args).to.deep.equal([true]);
     });
   });
 
-  describe('render', () => {
-    describe('when the slot is not reserved', () => {
-      const wrapper = getWrapper();
+  describe('button onClick when user is logged in', () => {
+    let instance;
+    let wrapper;
 
-      it('renders a table row', () => {
-        const tableRow = wrapper.find('tr');
-
-        expect(tableRow.length).to.equal(1);
-      });
-
-      it('clicking the table row calls props.onClick with correct arguments', () => {
-        wrapper.find('tr').props().onClick();
-
-        expect(defaultProps.onClick.callCount).to.equal(1);
-      });
-
-      describe('table cells', () => {
-        const tableCells = wrapper.find('td');
-
-        it('renders 4 table cells', () => {
-          expect(tableCells).to.have.length(4);
-        });
-
-        describe('the first table cell', () => {
-          const tableCell = tableCells.at(0);
-          const glyphIcon = tableCell.find(Glyphicon);
-
-          it('renders a checkbox icon', () => {
-            expect(glyphIcon.length).to.equal(1);
-          });
-
-          it('is not checked', () => {
-            expect(glyphIcon.props().glyph).to.equal('unchecked');
-          });
-        });
-
-        describe('the second table cell', () => {
-          const tableCell = tableCells.at(1);
-
-          it('displays the slot time range as a string', () => {
-            expect(tableCell.text()).to.equal(defaultProps.slot.asString);
-          });
-
-          it('has the specific time range inside a "time" element', () => {
-            const time = tableCell.find('time');
-            const expected = `${defaultProps.slot.start}/${defaultProps.slot.end}`;
-
-            expect(time.props().dateTime).to.equal(expected);
-          });
-        });
-
-        describe('the third table cell', () => {
-          const tableCell = tableCells.at(2);
-          const label = tableCell.find(Label);
-
-          it('contains a label with correct props', () => {
-            expect(label.length).to.equal(1);
-            expect(label.props().bsStyle).to.equal('success');
-          });
-
-          it('displays correct text', () => {
-            expect(label.props().children).to.equal('TimeSlot.available');
-          });
-        });
-      });
+    before(() => {
+      wrapper = getWrapper({ isLoggedIn: true });
+      instance = wrapper.instance();
+      instance.handleClick = simple.mock();
     });
 
-    describe('when the slot is reserved', () => {
-      const extraProps = {
-        slot: Immutable(TimeSlotFixture.build({
-          reserved: true,
-          reservation: Reservation.build(),
-        })),
-      };
-      const wrapper = getWrapper(extraProps);
-
-      it('renders a label with correct props', () => {
-        const label = wrapper.find(Label);
-
-        expect(label.length).to.equal(1);
-        expect(label.props().bsStyle).to.equal('danger');
-      });
-
-      it('displays correct text', () => {
-        const label = wrapper.find(Label);
-
-        expect(label.props().children).to.equal('TimeSlot.reserved');
-      });
+    afterEach(() => {
+      instance.handleClick.reset();
     });
+
+    after(() => {
+      simple.restore();
+    });
+
+    it('calls handleClick with disabled false', () => {
+      expect(wrapper.prop('onClick')).to.be.a('function');
+      wrapper.prop('onClick')();
+      expect(instance.handleClick.callCount).to.equal(1);
+      expect(instance.handleClick.lastCall.args).to.deep.equal([false]);
+    });
+  });
+
+  describe('getReservationInfoNotification', () => {
+    it('returns null when slot end in past', () => {
+      const t = simple.stub();
+      const slot = { end: '2016-10-11T10:00:00.000Z' };
+      const instance = getWrapper().instance();
+      const result = instance.getReservationInfoNotification(true, {}, slot, t);
+
+      expect(result).to.equal(null);
+      expect(t.callCount).to.equal(0);
+    });
+
+    it('returns null when slot reserved', () => {
+      const t = simple.stub();
+      const slot = { reserved: true };
+      const instance = getWrapper().instance();
+      const result = instance.getReservationInfoNotification(true, {}, slot, t);
+
+      expect(result).to.equal(null);
+      expect(t.callCount).to.equal(0);
+    });
+
+    it('returns message when not logged in and resource is reservable', () => {
+      const message = 'some message';
+      const t = simple.stub().returnWith(message);
+      const resource = Resource.build({ reservable: true });
+      const instance = getWrapper().instance();
+      const result = instance.getReservationInfoNotification(false, resource, defaultProps.slot, t);
+
+      expect(t.callCount).to.equal(1);
+      expect(result.message).to.equal(message);
+      expect(result.type).to.equal('info');
+      expect(result.timeOut).to.equal(10000);
+    });
+
+    it('returns correct message when logged in', () => {
+      const t = simple.stub();
+      const resource = Resource.build({ reservationInfo: 'reservation info' });
+      const instance = getWrapper().instance();
+      const result = instance.getReservationInfoNotification(true, resource, defaultProps.slot, t);
+
+      expect(t.callCount).to.equal(0);
+      expect(result.message).to.equal(resource.reservationInfo);
+      expect(result.type).to.equal('info');
+      expect(result.timeOut).to.equal(10000);
+    });
+  });
+
+  describe('handleClick when disabled is true', () => {
+    const addNotification = simple.stub();
+    const onClick = simple.stub();
+    const message = {
+      message: 'some message',
+      type: 'info',
+      timeOut: 100,
+    };
+    let instance;
+    let wrapper;
+
+    before(() => {
+      wrapper = getWrapper({
+        addNotification,
+        isLoggedIn: false,
+        onClick,
+      });
+      instance = wrapper.instance();
+      simple.mock(instance, 'getReservationInfoNotification').returnWith(message);
+      wrapper.instance().handleClick(true);
+    });
+
+    afterEach(() => {
+      instance.getReservationInfoNotification.reset();
+    });
+
+    after(() => {
+      simple.restore();
+    });
+
+    it('calls addNotification prop', () => {
+      expect(onClick.callCount).to.equal(0);
+      expect(instance.getReservationInfoNotification.callCount).to.equal(1);
+      expect(addNotification.callCount).to.equal(1);
+      expect(addNotification.lastCall.args).to.deep.equal([message]);
+    });
+  });
+
+  it('when disabled is false', () => {
+    const addNotification = simple.stub();
+    const onClick = simple.stub();
+    const wrapper = getWrapper({ addNotification, onClick });
+    wrapper.instance().handleClick(false);
+
+    expect(addNotification.callCount).to.equal(0);
+    expect(onClick.callCount).to.equal(1);
+    expect(onClick.lastCall.args).to.deep.equal([{
+      begin: defaultProps.slot.start,
+      end: defaultProps.slot.end,
+      resource: defaultProps.resource.id,
+    }]);
   });
 });

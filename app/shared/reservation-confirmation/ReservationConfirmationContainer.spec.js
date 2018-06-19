@@ -15,6 +15,7 @@ describe('pages/resource/reservation-calendar/ReservationConfirmationContainer',
   const resource = Resource.build({ needManualConfirmation: false });
   const defaultProps = {
     actions: {
+      cancelReservationEdit: simple.stub(),
       closeConfirmReservationModal: simple.stub(),
       deleteReservation: simple.stub(),
       openConfirmReservationModal: simple.stub(),
@@ -57,6 +58,7 @@ describe('pages/resource/reservation-calendar/ReservationConfirmationContainer',
         expect(actualProps.isPreliminaryReservation)
           .to.equal(defaultProps.resource.needManualConfirmation);
         expect(actualProps.isStaff).to.exist;
+        expect(actualProps.onCancel).to.equal(defaultProps.actions.cancelReservationEdit);
         expect(actualProps.onClose).to.equal(defaultProps.actions.closeConfirmReservationModal);
         expect(actualProps.onConfirm).to.equal(wrapper.instance().handleReservation);
         expect(actualProps.onRemoveReservation).to.equal(defaultProps.actions.removeReservation);
@@ -69,69 +71,37 @@ describe('pages/resource/reservation-calendar/ReservationConfirmationContainer',
   });
 
   describe('handleEdit', () => {
-    describe('if no reservations are selected', () => {
-      const extraProps = {
-        selectedReservations: [],
-        reservationsToEdit: [Reservation.build()],
-      };
-      const instance = getWrapper(extraProps).instance();
-      instance.handleEdit();
-
-      it('deletes the reservation that was edited', () => {
-        const actualArgs = defaultProps.actions.deleteReservation.lastCall.args;
-
-        expect(defaultProps.actions.deleteReservation.callCount).to.equal(1);
-        expect(actualArgs[0]).to.equal(extraProps.reservationsToEdit[0]);
-      });
-    });
-
-    describe('if reservations are selected', () => {
-      const extraProps = {
-        selectedReservations: [
-          Reservation.build(),
-          Reservation.build(),
-          Reservation.build(),
-        ],
-        reservationsToEdit: [Reservation.build()],
-      };
-      const instance = getWrapper(extraProps).instance();
-      instance.handleEdit();
-
-      it('edits the first selected reservation', () => {
-        const actualArgs = defaultProps.actions.putReservation.lastCall.args;
-        const expectedReservation = Object.assign(
-          {},
-          extraProps.selectedReservations[0],
-          { url: extraProps.reservationsToEdit[0].url }
-        );
-
-        expect(defaultProps.actions.putReservation.callCount).to.equal(1);
-        expect(actualArgs[0]).to.deep.equal(expectedReservation);
-      });
-
-      it('adds new reservations for the rest of the selected reservations', (done) => {
-        const expectedCallCount = extraProps.selectedReservations.length - 1;
-
-        setTimeout(() => {
-          expect(defaultProps.actions.postReservation.callCount).to.equal(expectedCallCount);
-          defaultProps.actions.postReservation.calls.forEach((call, index) => {
-            expect(call.args[0]).to.deep.equal(extraProps.selectedReservations[index + 1]);
-          });
-          done();
-        }, 800);
-      });
+    it('edits the selected reservation', () => {
+      const reservationsToEdit = [Reservation.build()];
+      const instance = getWrapper({ reservationsToEdit }).instance();
+      const newValues = { begin: 'foo', end: 'bar' };
+      instance.handleEdit(newValues);
+      const expectedArgs = [{ ...reservationsToEdit[0], ...newValues }];
+      expect(defaultProps.actions.putReservation.callCount).to.equal(1);
+      expect(defaultProps.actions.putReservation.lastCall.args).to.deep.equal(expectedArgs);
     });
   });
 
   describe('handleReservation', () => {
     const recurringReservations = [
-      Reservation.build({ resource: resource.id }),
+      Reservation.build({
+        begin: '2018-01-29T13:00:00+02:00',
+        end: '2018-01-29T13:30:00+02:00',
+        resource: resource.id,
+      }),
     ];
     const selectedReservations = [
-      Reservation.build({ resource: resource.id }),
-      Reservation.build({ resource: resource.id }),
+      Reservation.build({
+        begin: '2018-01-30T13:00:00+02:00',
+        end: '2018-01-30T13:30:00+02:00',
+        resource: resource.id,
+      }),
+      Reservation.build({
+        begin: '2018-01-30T15:00:00+02:00',
+        end: '2018-01-30T15:30:00+02:00',
+        resource: resource.id,
+      }),
     ];
-    const reservavations = [...selectedReservations, ...recurringReservations];
     const instance = getWrapper({ recurringReservations, selectedReservations }).instance();
 
     before(() => {
@@ -141,7 +111,7 @@ describe('pages/resource/reservation-calendar/ReservationConfirmationContainer',
     it('calls postReservation for each selected and recurring reservation', () => {
       instance.handleReservation();
       expect(defaultProps.actions.postReservation.callCount)
-        .to.equal(reservavations.length);
+        .to.equal(2);
     });
 
     it('calls postReservation with correct arguments', () => {

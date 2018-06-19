@@ -10,12 +10,6 @@ import { injectT } from 'i18n';
 import { getCurrentCustomization } from 'utils/customizationUtils';
 
 function FooterContent({ t }) {
-  const aboutLink = (
-    <Link className="about-link" to="/about">
-      {t('Footer.aboutLink')}
-    </Link>
-  );
-
   const feedbackLink = <FeedbackLink>{t('Footer.feedbackLink')}</FeedbackLink>;
 
   switch (getCurrentCustomization()) {
@@ -23,7 +17,7 @@ function FooterContent({ t }) {
       return (
         <Grid>
           <Row>
-            <Col lg={4} md={4}>
+            <Col lg={3} md={3}>
               <Link className="brand-link" to="/">
                 <Logo />
                 Varaamo
@@ -31,7 +25,24 @@ function FooterContent({ t }) {
             </Col>
             <Col lg={6} md={6}>
               <p>{t('Footer.espooText')} {feedbackLink}</p>
-              {aboutLink}
+            </Col>
+          </Row>
+        </Grid>
+      );
+    }
+
+    case 'VANTAA': {
+      return (
+        <Grid>
+          <Row>
+            <Col lg={3} md={3}>
+              <Link className="brand-link" to="/">
+                <Logo />
+                Varaamo
+              </Link>
+            </Col>
+            <Col lg={6} md={6}>
+              <p>{t('Footer.vantaaText')} {feedbackLink}</p>
             </Col>
           </Row>
         </Grid>
@@ -50,7 +61,6 @@ function FooterContent({ t }) {
             </Col>
             <Col lg={6} md={6}>
               <p>{t('Footer.helsinkiText')} {feedbackLink}</p>
-              {aboutLink}
             </Col>
           </Row>
         </Grid>
@@ -61,6 +71,10 @@ function FooterContent({ t }) {
 
 FooterContent.propTypes = {
   t: PropTypes.func.isRequired,
+};
+
+FooterContent.defaultProps = {
+  onLinkClick: () => {},
 };
 
 export default injectT(FooterContent);

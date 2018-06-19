@@ -1,14 +1,12 @@
 import React, { PropTypes } from 'react';
 import Glyphicon from 'react-bootstrap/lib/Glyphicon';
-import MenuItem from 'react-bootstrap/lib/MenuItem';
-import RBNavbar from 'react-bootstrap/lib/Navbar';
 import Nav from 'react-bootstrap/lib/Nav';
-import NavDropdown from 'react-bootstrap/lib/NavDropdown';
 import NavItem from 'react-bootstrap/lib/NavItem';
-import { IndexLink } from 'react-router';
 import { LinkContainer } from 'react-router-bootstrap';
 
-import Logo from 'shared/logo';
+import finlandFlagSrc from 'assets/flags/fi.svg';
+import swedenFlagSrc from 'assets/flags/sv.svg';
+import englandFlagSrc from 'assets/flags/gb.svg';
 import { injectT } from 'i18n';
 import { getSearchPageUrl } from 'utils/searchUtils';
 
@@ -24,67 +22,89 @@ function Navbar(props) {
     currentLanguage,
     isAdmin,
     isLoggedIn,
+    onNavItemClick,
     t,
     userName,
   } = props;
 
+  const onSearchNavItemClick = () => {
+    onNavItemClick();
+    clearSearchResults();
+  };
+
+  const onLoginNavItemClick = () => {
+    onNavItemClick();
+    handleLoginClick();
+  };
+
   return (
-    <RBNavbar inverse>
-      <RBNavbar.Header>
-        <RBNavbar.Brand>
-          <IndexLink to="/">
-            <Logo />
-            Varaamo
-          </IndexLink>
-        </RBNavbar.Brand>
-        <RBNavbar.Toggle />
-      </RBNavbar.Header>
-      <RBNavbar.Collapse>
-        <Nav navbar>
+    <div className="app-Navbar">
+      <Nav id="language-nav" onSelect={changeLocale}>
+        {currentLanguage !== 'en' && <NavItem eventKey="en" onClick={onNavItemClick}>
+          <img
+            alt={t('Navbar.language-english')}
+            src={englandFlagSrc}
+          />
+        </NavItem>}
+        {currentLanguage !== 'fi' && <NavItem eventKey="fi" onClick={onNavItemClick}>
+          <img
+            alt={t('Navbar.language-finnish')}
+            src={finlandFlagSrc}
+          />
+        </NavItem>}
+        {currentLanguage !== 'sv' && <NavItem eventKey="sv" onClick={onNavItemClick}>
+          <img
+            alt={t('Navbar.language-swedish')}
+            src={swedenFlagSrc}
+          />
+        </NavItem>}
+      </Nav>
+      <div className="main-nav">
+        {isLoggedIn ?
+          <h4>{userName}</h4> :
+            <h2>{t('Navbar.header')}</h2>
+        }
+        <Nav id="main-nav" stacked>
+          {isLoggedIn && (
+            <NavItem
+              href={`/logout?next=${window.location.origin}`}
+              onClick={onNavItemClick}
+            >
+                {t('Navbar.logout')}
+            </NavItem>
+          )}
+          {!isLoggedIn && (
+            <NavItem id="app-Navbar__login" onClick={onLoginNavItemClick}>
+              {t('Navbar.login')}
+            </NavItem>
+          )}
           <LinkContainer to={getSearchPageUrl()}>
-            <NavItem onClick={clearSearchResults}>
+            <NavItem onClick={onSearchNavItemClick}>
               <Glyphicon glyph="search" /> {t('Navbar.search')}
             </NavItem>
           </LinkContainer>
-        </Nav>
-
-        <Nav navbar pullRight>
           {isAdmin && (
             <LinkContainer to="/admin-resources">
-              <NavItem>
+              <NavItem onClick={onNavItemClick}>
                 {t('Navbar.adminResources')}
               </NavItem>
             </LinkContainer>
           )}
           {isLoggedIn && (
             <LinkContainer to="/my-reservations">
-              <NavItem>
+              <NavItem onClick={onNavItemClick}>
                 {t('Navbar.userResources')}
               </NavItem>
             </LinkContainer>
           )}
-          {isLoggedIn && (
-            <NavDropdown id="user-dropdown" title={userName}>
-              <MenuItem href={`/logout?next=${window.location.origin}`}>
-                {t('Navbar.logout')}
-              </MenuItem>
-            </NavDropdown>
-          )}
-          {!isLoggedIn && (
-            <NavItem onClick={handleLoginClick}>
-              {t('Navbar.login')}
+          <LinkContainer to="/about">
+            <NavItem className="about-link" onClick={onNavItemClick}>
+              {t('Navbar.aboutLink')}
             </NavItem>
-          )}
+          </LinkContainer>
         </Nav>
-
-        {/* Language nav is placed here so it is in the bottom in the navbar on mobile */}
-        <Nav id="language-nav" onSelect={changeLocale}>
-          {currentLanguage !== 'en' && <NavItem eventKey="en">EN</NavItem>}
-          {currentLanguage !== 'fi' && <NavItem eventKey="fi">FI</NavItem>}
-          {currentLanguage !== 'sv' && <NavItem eventKey="sv">SV</NavItem>}
-        </Nav>
-      </RBNavbar.Collapse>
-    </RBNavbar>
+      </div>
+    </div>
   );
 }
 
@@ -94,8 +114,13 @@ Navbar.propTypes = {
   currentLanguage: PropTypes.string.isRequired,
   isAdmin: PropTypes.bool.isRequired,
   isLoggedIn: PropTypes.bool.isRequired,
+  onNavItemClick: PropTypes.func,
   t: PropTypes.func.isRequired,
   userName: PropTypes.string.isRequired,
+};
+
+Navbar.defaultProps = {
+  onNavItemClick: () => {},
 };
 
 export default injectT(Navbar);

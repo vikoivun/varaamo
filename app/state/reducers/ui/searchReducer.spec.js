@@ -3,7 +3,7 @@ import keyBy from 'lodash/keyBy';
 import { createAction } from 'redux-actions';
 import Immutable from 'seamless-immutable';
 
-import { clearSearchResults } from 'actions/searchActions';
+import { clearSearchResults, selectUnit, toggleMap } from 'actions/searchActions';
 import types from 'constants/ActionTypes';
 import Resource from 'utils/fixtures/Resource';
 import searchReducer from './searchReducer';
@@ -21,8 +21,12 @@ describe('state/reducers/ui/searchReducer', () => {
         expect(initialState.filters.date).to.equal('');
       });
 
+      it('distance is an empty string', () => {
+        expect(initialState.filters.distance).to.equal('');
+      });
+
       it('people is an empty string', () => {
-        expect(initialState.filters.purpose).to.equal('');
+        expect(initialState.filters.people).to.equal('');
       });
 
       it('purpose is an empty string', () => {
@@ -34,12 +38,20 @@ describe('state/reducers/ui/searchReducer', () => {
       });
     });
 
+    it('position is null', () => {
+      expect(initialState.position).to.equal(null);
+    });
+
     it('results is an empty array', () => {
       expect(initialState.results).to.deep.equal([]);
     });
 
     it('searchDone is false', () => {
       expect(initialState.searchDone).to.equal(false);
+    });
+
+    it('unitId is null', () => {
+      expect(initialState.unitId).to.equal(null);
     });
   });
 
@@ -151,25 +163,140 @@ describe('state/reducers/ui/searchReducer', () => {
       });
     });
 
-    describe('UI.CLEAR_SEARCH_RESULTS', () => {
-      it('empties the search results', () => {
+    describe('UI.CLEAR_SEARCH_FILTERS', () => {
+      it('clears filters', () => {
+        const filters = {
+          date: '2017-12-12',
+          distance: '5000',
+          people: '12',
+          purpose: 'some-purpose',
+          search: 'search-query',
+        };
+        const expected = {
+          date: '',
+          distance: '',
+          duration: 0,
+          end: '',
+          people: '',
+          purpose: '',
+          search: '',
+          start: '',
+        };
+        const action = clearSearchResults();
+        const initialState = Immutable({ filters });
+        const nextState = searchReducer(initialState, action);
+
+        expect(nextState.filters).to.deep.equal(expected);
+      });
+
+      it('does not empty the search results', () => {
         const action = clearSearchResults();
         const initialState = Immutable({
           results: ['r-1', 'r-2'],
         });
         const nextState = searchReducer(initialState, action);
 
-        expect(nextState.results).to.deep.equal([]);
+        expect(nextState.results).to.deep.equal(initialState.results);
       });
 
-      it('sets searchDone to false', () => {
+      it('does not change searchDone', () => {
         const action = clearSearchResults();
         const initialState = Immutable({
           searchDone: true,
         });
         const nextState = searchReducer(initialState, action);
 
-        expect(nextState.searchDone).to.equal(false);
+        expect(nextState.searchDone).to.equal(true);
+      });
+    });
+
+    describe('UI.ENABLE_GEOPOSITION_SUCCESS', () => {
+      const enableGeopositionSuccess = createAction(types.UI.ENABLE_GEOPOSITION_SUCCESS);
+
+      it('sets the given position coords to filters', () => {
+        const position = { coords: {
+          accuracy: 10,
+          latitude: 11,
+          longitude: 12,
+        } };
+        const action = enableGeopositionSuccess(position);
+        const initialState = Immutable({
+          position: null,
+        });
+
+        const expected = Immutable({
+          lat: 11,
+          lon: 12,
+        });
+        const nextState = searchReducer(initialState, action);
+
+        expect(nextState.position).to.deep.equal(expected);
+      });
+    });
+
+    describe('UI.ENABLE_GEOPOSITION_ERROR', () => {
+      const enableGeopositionError = createAction(types.UI.ENABLE_GEOPOSITION_ERROR);
+
+      it('sets position to null', () => {
+        const position = {
+          lat: 11,
+          lon: 12,
+        };
+        const action = enableGeopositionError();
+        const initialState = Immutable({ position });
+        const nextState = searchReducer(initialState, action);
+
+        expect(nextState.position).to.deep.equal(null);
+      });
+    });
+
+    describe('UI.DISABLE_GEOPOSITION', () => {
+      const disableGeoposition = createAction(types.UI.DISABLE_GEOPOSITION);
+
+      it('sets position to null', () => {
+        const position = {
+          lat: 11,
+          lon: 12,
+        };
+        const action = disableGeoposition();
+        const initialState = Immutable({ position });
+        const nextState = searchReducer(initialState, action);
+
+        expect(nextState.position).to.deep.equal(null);
+      });
+    });
+
+    describe('UI.TOGGLE_SEARCH_SHOW_MAP', () => {
+      it('toggles showMap if false', () => {
+        const action = toggleMap();
+        const initialState = Immutable({
+          showMap: false,
+        });
+        const nextState = searchReducer(initialState, action);
+
+        expect(nextState.showMap).to.be.true;
+      });
+
+      it('toggles showMap if true', () => {
+        const action = toggleMap();
+        const initialState = Immutable({
+          showMap: true,
+        });
+        const nextState = searchReducer(initialState, action);
+
+        expect(nextState.showMap).to.be.false;
+      });
+    });
+
+    describe('UI.SELECT_SEARCH_RESULTS_UNIT', () => {
+      it('Sets action payload content to unitId', () => {
+        const action = selectUnit('123');
+        const initialState = Immutable({
+          unitId: null,
+        });
+        const nextState = searchReducer(initialState, action);
+
+        expect(nextState.unitId).to.equal('123');
       });
     });
   });

@@ -2,6 +2,7 @@ import { createAction } from 'redux-actions';
 import { CALL_API } from 'redux-api-middleware';
 
 import types from 'constants/ActionTypes';
+import constants from 'constants/AppConstants';
 import schemas from 'store/middleware/Schemas';
 import {
   buildAPIUrl,
@@ -12,7 +13,10 @@ import {
 } from 'utils/apiUtils';
 import { getFetchParamsFromFilters } from 'utils/searchUtils';
 
-const clearSearchResults = createAction(types.UI.CLEAR_SEARCH_RESULTS);
+const clearSearchResults = createAction(types.UI.CLEAR_SEARCH_FILTERS);
+const toggleMap = createAction(types.UI.TOGGLE_SEARCH_SHOW_MAP);
+const searchMapClick = createAction(types.UI.SEARCH_MAP_CLICK);
+const selectUnit = createAction(types.UI.SELECT_SEARCH_RESULTS_UNIT);
 
 function getPiwikActionName(searchParams) {
   if (searchParams.search) {
@@ -26,7 +30,7 @@ function getPiwikActionName(searchParams) {
 
 function searchResources(filters = {}) {
   const params = getFetchParamsFromFilters(filters);
-  const fetchParams = Object.assign({}, params, { pageSize: 100 });
+  const fetchParams = Object.assign({}, params, { pageSize: constants.SEARCH_PAGE_SIZE });
   const piwikActionName = getPiwikActionName(fetchParams);
 
   return {
@@ -64,4 +68,7 @@ export {
   clearSearchResults,
   getPiwikActionName,
   searchResources,
+  searchMapClick,
+  selectUnit,
+  toggleMap,
 };

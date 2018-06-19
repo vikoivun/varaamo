@@ -1,0 +1,34 @@
+.app-TopNavbar {
+  background-color: $white;
+  margin-bottom: 0;
+
+  .app-Navbar__logout-button {
+    text-transform: uppercase;
+  }
+
+  .brand-logo {
+    @include helsinki-logo($black);
+    display: block;
+    height: 3rem;
+    width: 120px;
+  }
+  &__icon {
+    height: $line-height-computed;
+  }
+
+  .nav {
+    li {
+      a {
+        padding-left: 2px;
+        margin-left: 2px;
+      }
+      a#language-nav-dropdown {
+        text-transform: uppercase;
+      }
+    }
+    li.disabled> a {
+      padding-left: 0;
+      margin-right: 0;
+    }
+  }
+}

@@ -1,70 +1,64 @@
 import upperFirst from 'lodash/upperFirst';
 import React, { PropTypes } from 'react';
 import Col from 'react-bootstrap/lib/Col';
-import Label from 'react-bootstrap/lib/Label';
+import Panel from 'react-bootstrap/lib/Panel';
 import Row from 'react-bootstrap/lib/Row';
 
 import { injectT } from 'i18n';
 import WrappedText from 'shared/wrapped-text';
-import FavoriteButton from 'shared/favorite-button';
-import ResourceIcons from 'shared/resource-icons';
-import ImageCarousel from './ImageCarousel';
+import { getTermsAndConditions } from 'utils/resourceUtils';
+import { getServiceMapUrl } from 'utils/unitUtils';
+import ReservationInfo from '../reservation-info';
 
-function getAddress({ addressZip, municipality, name, streetAddress }) {
-  const parts = [
-    name,
-    streetAddress,
-    `${addressZip} ${upperFirst(municipality)}`.trim(),
-  ];
-  return parts.filter(part => part).join(', ');
-}
+function ResourceInfo({ isLoggedIn, resource, unit, t }) {
+  const termsAndConditions = getTermsAndConditions(resource);
+  const serviceMapUrl = getServiceMapUrl(unit);
 
-function renderEquipment(equipment, t) {
-  return equipment.length ?
-    <div className="details-row resource-equipment">
-      <div className="details-label">{t('ResourceInfo.equipmentHeader')}</div>
-      {
-        equipment.map(item =>
-          <Label bsStyle="primary" key={`label-${item.id}`}>{item.name}</Label>
-        )
-      }
-    </div> :
-    null;
-}
-
-function orderImages(images) {
-  return [].concat(
-    images.filter(image => image.type === 'main'),
-    images.filter(image => image.type !== 'main'),
-  );
-}
-
-function ResourceInfo({ isAdmin, resource, unit, t }) {
   return (
-    <section className="resource-info">
-      <Row>
-        <Col className="resource-images" sm={7} xs={12}>
-          <ImageCarousel images={orderImages(resource.images) || []} />
-        </Col>
-        <Col sm={5} xs={12}>
-          {isAdmin && <FavoriteButton resource={resource} />}
-          <h1>{resource.name}</h1>
-          <p className="address lead">{getAddress(unit)}</p>
-          <ResourceIcons resource={resource} />
-          {renderEquipment(resource.equipment, t)}
-          {resource.description &&
-            <div className="resource-description">
-              <WrappedText text={resource.description} />
-            </div>
+    <Row>
+      <section className="app-ResourceInfo">
+        <div className="app-ResourceInfo__description">
+          {resource.description && <WrappedText text={resource.description} />}
+        </div>
+        <Panel collapsible defaultExpanded header={t('ResourceInfo.reservationTitle')}>
+          {termsAndConditions &&
+            <WrappedText className="app-ResourceInfo__terms" text={termsAndConditions} />
           }
-        </Col>
-      </Row>
-    </section>
+          <ReservationInfo
+            isLoggedIn={isLoggedIn}
+            resource={resource}
+          />
+        </Panel>
+        <Panel collapsible defaultExpanded header={t('ResourceInfo.additionalInfoTitle')}>
+          <Row>
+            <Col className="app-ResourceInfo__address" xs={6}>
+              {unit && unit.name && <span>{unit.name}</span>}
+              {unit && unit.streetAddress && <span>{unit.streetAddress}</span>}
+              {unit &&
+                <span>{`${unit.addressZip} ${upperFirst(unit.municipality)}`.trim()}</span>
+              }
+            </Col>
+            <Col className="app-ResourceInfo__web" xs={6}>
+              {serviceMapUrl &&
+                <span className="app-ResourceInfo__servicemap">
+                  <a href={serviceMapUrl}>{t('ResourceInfo.serviceMapLink')}</a>
+                </span>
+              }
+              {unit && unit.wwwUrl &&
+                <span className="app-ResourceInfo__www">
+                  <a href={unit.wwwUrl}>{unit.wwwUrl}</a>
+                </span>
+              }
+            </Col>
+          </Row>
+        </Panel>
+      </section>
+    </Row>
   );
 }
 
 ResourceInfo.propTypes = {
-  isAdmin: PropTypes.bool.isRequired,
+  isLoggedIn: PropTypes.bool.isRequired,
   resource: PropTypes.object.isRequired,
   t: PropTypes.func.isRequired,
   unit: PropTypes.object.isRequired,

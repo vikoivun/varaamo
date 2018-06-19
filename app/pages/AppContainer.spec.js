@@ -3,15 +3,17 @@ import React from 'react';
 import { shallow } from 'enzyme';
 import simple from 'simple-mock';
 
-import Footer from 'shared/footer';
-import Navbar from 'shared/navbar';
+import Header from 'shared/header';
 import Notifications from 'shared/notifications';
+import { getState } from 'utils/testUtils';
 import { selector, UnconnectedAppContainer as AppContainer } from './AppContainer';
+
 
 describe('pages/AppContainer', () => {
   function getWrapper(props) {
     const defaults = {
       children: <div id="child-div" />,
+      enableGeoposition: () => {},
       fetchUser: () => null,
       location: {},
       userId: null,
@@ -20,22 +22,56 @@ describe('pages/AppContainer', () => {
   }
 
   describe('selector', () => {
-    it('returns userId from state', () => {
-      const state = {
+    const searchResultIds = ['resource-1', 'resourece-2'];
+
+    const defaultProps = {
+      location: {
+        pathname: '/',
+      },
+    };
+
+    function getSelected(props = defaultProps) {
+      const state = getState({
         auth: {
           userId: 'u-1',
         },
+        'ui.search': {
+          results: searchResultIds,
+          showMap: true,
+          unitId: 'search-unit',
+        },
+        'ui.resourceMap': {
+          resourceId: 'selected-resource',
+          showMap: false,
+          unitId: 'resource-unit',
+        },
+      });
+      return selector(state, props);
+    }
+
+    describe('with path in root', () => {
+      it('returns userId from state', () => {
+        expect(getSelected().userId).to.equal('u-1');
+      });
+    });
+
+    describe('with path in /resources/', () => {
+      const customProps = {
+        location: {
+          pathname: '/resources/qwertyqwerty',
+        },
       };
-      const selected = selector(state);
-      expect(selected.userId).to.equal('u-1');
+      it('returns userId from state', () => {
+        expect(getSelected(customProps).userId).to.equal('u-1');
+      });
     });
   });
 
   describe('render', () => {
     const wrapper = getWrapper();
 
-    it('renders Navbar', () => {
-      expect(getWrapper().find(Navbar)).to.have.length(1);
+    it('renders Header', () => {
+      expect(getWrapper().find(Header)).to.have.length(1);
     });
 
     it('renders Notifications', () => {
@@ -45,10 +81,6 @@ describe('pages/AppContainer', () => {
     it('renders props.children', () => {
       const children = wrapper.find('#child-div');
       expect(children).to.have.length(1);
-    });
-
-    it('renders a Footer component', () => {
-      expect(getWrapper().find(Footer)).to.have.length(1);
     });
   });
 

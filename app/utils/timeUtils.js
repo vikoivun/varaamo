@@ -11,15 +11,20 @@ function addToDate(date, daysToIncrement) {
   return newDate.format(constants.DATE_FORMAT);
 }
 
-function getDateStartAndEndTimes(date) {
+function getDateStartAndEndTimes(date, startTime, endTime, duration) {
   if (!date) {
     return {};
   }
-
   const start = `${date}T00:00:00Z`;
   const end = `${date}T23:59:59Z`;
-
-  return { start, end };
+  if (endTime && startTime) {
+    const timeZone = moment().format('Z');
+    const availableStart = `${date}T${startTime}:00${timeZone}`;
+    const availableEnd = `${date}T${endTime}:00${timeZone}`;
+    const availableBetween = `${availableStart},${availableEnd},${duration}`;
+    return { availableBetween, end, start };
+  }
+  return { end, start };
 }
 
 function getDateString(date) {
@@ -28,6 +33,57 @@ function getDateString(date) {
   }
 
   return date;
+}
+
+function getDuration(duration) {
+  if (!duration) {
+    return moment(constants.FILTER.timePeriod, constants.FILTER.timePeriodType).minutes();
+  }
+  return duration;
+}
+
+function getDurationHours(duration) {
+  const value = duration || constants.FILTER.timePeriod;
+  return value / 60;
+}
+
+function calculateDuration(duration, start, end) {
+  const { timeFormat, timePeriodType } = constants.FILTER;
+  const startTime = moment(start, timeFormat);
+  const endTime = moment(end, timeFormat);
+  const diffMinutes = endTime.diff(startTime, timePeriodType);
+  return Math.min(duration, diffMinutes);
+}
+
+function getEndTimeString(endTime) {
+  if (!endTime) {
+    return '23:30';
+  }
+  return endTime;
+}
+
+function calculateEndTime(end, start) {
+  const { timeFormat, timePeriod, timePeriodType } = constants.FILTER;
+  const startTime = moment(start, timeFormat);
+  const endTime = moment(end, timeFormat);
+  if (startTime.isSameOrAfter(endTime)) {
+    return startTime.add(timePeriod, timePeriodType).format(timeFormat);
+  }
+  return end;
+}
+
+function getStartTimeString(startTime) {
+  if (!startTime) {
+    const now = moment();
+    const nextPeriod = moment().startOf('hour').add(
+      constants.FILTER.timePeriod,
+      constants.FILTER.timePeriodType);
+    while (nextPeriod.isBefore(now)) {
+      nextPeriod.add(constants.FILTER.timePeriod, constants.FILTER.timePeriodType);
+    }
+    return nextPeriod.format(constants.FILTER.timeFormat);
+  }
+  return startTime;
 }
 
 function getTimeSlots(start, end, period = '00:30:00', reservations = [], reservationsToEdit = []) {
@@ -105,8 +161,14 @@ function prettifyHours(hours, showMinutes = false) {
 
 export {
   addToDate,
+  calculateDuration,
+  calculateEndTime,
   getDateStartAndEndTimes,
   getDateString,
+  getDuration,
+  getDurationHours,
+  getEndTimeString,
+  getStartTimeString,
   getTimeSlots,
   isPastDate,
   prettifyHours,

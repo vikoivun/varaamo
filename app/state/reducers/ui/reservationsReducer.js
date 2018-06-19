@@ -1,5 +1,9 @@
-import includes from 'lodash/includes';
+import find from 'lodash/find';
+import first from 'lodash/first';
+import last from 'lodash/last';
+import orderBy from 'lodash/orderBy';
 import without from 'lodash/without';
+import moment from 'moment';
 import Immutable from 'seamless-immutable';
 
 import types from 'constants/ActionTypes';
@@ -12,17 +16,30 @@ const initialState = Immutable({
   },
   failed: [],
   selected: [],
+  selectedSlot: null,
   toCancel: [],
   toEdit: [],
   toShow: [],
+  toShowEdited: [],
 });
 
 function selectReservationToEdit(state, action) {
   const { minPeriod, reservation } = action.payload;
-  const selected = getTimeSlots(reservation.begin, reservation.end, minPeriod).map(
-    slot => slot.asISOString
-  );
-
+  const slots = getTimeSlots(reservation.begin, reservation.end, minPeriod);
+  const firstSlot = first(slots);
+  const selected = [{
+    begin: firstSlot.start,
+    end: firstSlot.end,
+    resource: reservation.resource,
+  }];
+  if (slots.length > 1) {
+    const lastSlot = last(slots);
+    selected.push({
+      begin: lastSlot.start,
+      end: lastSlot.end,
+      resource: reservation.resource,
+    });
+  }
   return state.merge({
     selected,
     toEdit: [reservation],
@@ -62,6 +79,7 @@ function reservationsReducer(state = initialState, action) {
         selected: [],
         toEdit: [],
         toShow: [],
+        toShowEdited: [...state.toShowEdited, action.payload],
       });
     }
 
@@ -103,14 +121,31 @@ function reservationsReducer(state = initialState, action) {
       return selectReservationToEdit(state, action);
     }
 
+    case types.UI.SELECT_RESERVATION_SLOT: {
+      return state.merge({ selectedSlot: action.payload });
+    }
+
     case types.UI.SELECT_RESERVATION_TO_SHOW: {
       return state.merge({ toShow: [...state.toShow, action.payload] });
     }
 
     case types.UI.TOGGLE_TIME_SLOT: {
       const slot = action.payload;
-      if (includes(state.selected, slot)) {
-        return state.merge({ selected: without(state.selected, slot) });
+      const stateSlot = find(state.selected, slot);
+      if (stateSlot) {
+        return state.merge({ selected: without(state.selected, stateSlot) });
+      } else if (state.selected.length <= 1) {
+        return state.merge({ selected: [...state.selected, slot] });
+      }
+      const orderedSelected = orderBy(state.selected, 'begin');
+      const firstSelected = first(orderedSelected);
+      const lastSelected = last(orderedSelected);
+      if (moment(lastSelected.begin).isBefore(slot.begin)) {
+        return state.merge({ selected: [...without(state.selected, lastSelected), slot] });
+      }
+      if (moment(firstSelected.begin).isBefore(slot.begin) &&
+        moment(lastSelected.begin).isAfter(slot.begin)) {
+        return state.merge({ selected: [...without(state.selected, lastSelected), slot] });
       }
       return state.merge({ selected: [...state.selected, slot] });
     }

@@ -25,6 +25,7 @@ function getState(resource) {
       },
       reservations: {
         selected: [],
+        selectedSlot: { foo: 'bar' },
         toEdit: ['mock-reservation'],
       },
     }),
@@ -101,14 +102,6 @@ describe('pages/resource/reservation-calendar/reservationCalendarSelector', () =
     expect(selected.isLoggedIn).to.exist;
   });
 
-  it('returns isMakingReservations', () => {
-    const state = getState(resource);
-    const props = getProps(resource.id);
-    const selected = reservationCalendarSelector(state, props);
-
-    expect(selected.isMakingReservations).to.exist;
-  });
-
   it('returns isStaff', () => {
     const state = getState(resource);
     const props = getProps(resource.id);
@@ -124,6 +117,13 @@ describe('pages/resource/reservation-calendar/reservationCalendarSelector', () =
     const expected = state.ui.reservations.selected;
 
     expect(selected.selected).to.equal(expected);
+  });
+
+  it('returns reservation.selectedSlot from state', () => {
+    const state = getState(resource);
+    const props = getProps(resource.id);
+    const selected = reservationCalendarSelector(state, props);
+    expect(selected.selectedReservationSlot).to.deep.equal(state.ui.reservations.selectedSlot);
   });
 
   it('returns resource', () => {
@@ -145,18 +145,56 @@ describe('pages/resource/reservation-calendar/reservationCalendarSelector', () =
   describe('timeSlots', () => {
     it('uses resource properties to calculate correct time slots', () => {
       const mockSlots = ['slot-1', 'slot-2'];
+      const expectedMockSlots = [
+        mockSlots,
+        mockSlots,
+        mockSlots,
+        mockSlots,
+        mockSlots,
+        mockSlots,
+        mockSlots,
+        mockSlots,
+      ];
       simple.mock(timeUtils, 'getTimeSlots').returnWith(mockSlots);
 
       const state = getState(resource);
       const props = getProps(resource.id);
       const selected = reservationCalendarSelector(state, props);
-      const actualArgs = timeUtils.getTimeSlots.lastCall.args;
 
+      expect(timeUtils.getTimeSlots.callCount).to.equal(8);
+      const actualArgs = timeUtils.getTimeSlots.calls[5].args;
       expect(actualArgs[0]).to.equal('2015-10-10T12:00:00+03:00');
       expect(actualArgs[1]).to.equal('2015-10-10T18:00:00+03:00');
       expect(actualArgs[2]).to.equal(resource.minPeriod);
       expect(actualArgs[3]).to.deep.equal(resource.reservations);
-      expect(selected.timeSlots).to.deep.equal(mockSlots);
+      expect(selected.timeSlots).to.deep.equal(expectedMockSlots);
+      simple.restore();
+    });
+
+    it('returns start day if resource is not open on that day', () => {
+      const expectedMockSlots = [
+        [],
+        [],
+        [],
+        [],
+        [],
+        [{ start: '2015-10-10' }],
+        [{ start: '2015-10-11' }],
+        [],
+      ];
+      simple.mock(timeUtils, 'getTimeSlots').returnWith([]);
+
+      const state = getState(resource);
+      const props = getProps(resource.id);
+      const selected = reservationCalendarSelector(state, props);
+
+      expect(timeUtils.getTimeSlots.callCount).to.equal(8);
+      const actualArgs = timeUtils.getTimeSlots.calls[5].args;
+      expect(actualArgs[0]).to.equal('2015-10-10T12:00:00+03:00');
+      expect(actualArgs[1]).to.equal('2015-10-10T18:00:00+03:00');
+      expect(actualArgs[2]).to.equal(resource.minPeriod);
+      expect(actualArgs[3]).to.deep.equal(resource.reservations);
+      expect(selected.timeSlots).to.deep.equal(expectedMockSlots);
       simple.restore();
     });
 
@@ -165,7 +203,7 @@ describe('pages/resource/reservation-calendar/reservationCalendarSelector', () =
       const props = getProps(resource.id, '2015-10-15');
       const selected = reservationCalendarSelector(state, props);
 
-      expect(selected.timeSlots).to.deep.equal([]);
+      expect(selected.timeSlots).to.deep.equal([[], [], [], [], [], [], []]);
     });
 
     it('returns timeSlots as an empty array when resource is not found', () => {
@@ -173,16 +211,7 @@ describe('pages/resource/reservation-calendar/reservationCalendarSelector', () =
       const props = getProps('unfetched-resource-id');
       const selected = reservationCalendarSelector(state, props);
 
-      expect(selected.timeSlots).to.deep.equal([]);
+      expect(selected.timeSlots).to.deep.equal([[]]);
     });
-  });
-
-  it('returns urlHash', () => {
-    const state = getState(resource);
-    const props = getProps(resource.id);
-    const expected = props.location.hash;
-    const selected = reservationCalendarSelector(state, props);
-
-    expect(selected.urlHash).to.equal(expected);
   });
 });

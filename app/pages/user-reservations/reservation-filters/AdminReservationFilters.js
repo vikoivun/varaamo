@@ -22,7 +22,7 @@ class AdminReservationFilters extends Component {
     const { filters, t } = this.props;
     const stateOptions = [
       {
-        label: t('AdminReservationFilters.allOptionLabel'),
+        label: t('common.optionsAllLabel'),
         value: 'all',
       },
       ...sortBy(
@@ -39,7 +39,7 @@ class AdminReservationFilters extends Component {
 
     return (
       <div className="reservation-filters">
-        <h4>{t('AdminReservationFilters.header')}</h4>
+        <h4>{t('UserReservationsPage.preliminaryReservationsHeader')}</h4>
         <Select
           className="reservation-state-select"
           clearable={false}

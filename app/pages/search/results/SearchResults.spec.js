@@ -1,21 +1,33 @@
 import { expect } from 'chai';
+import { shallow } from 'enzyme';
 import React from 'react';
 import Loader from 'react-loader';
 import Immutable from 'seamless-immutable';
 
+import ResourceCompactList from 'shared/resource-compact-list';
 import ResourceList from 'shared/resource-list';
-import { shallowWithIntl } from 'utils/testUtils';
-import SearchResults from './SearchResults';
-import ResultsCount from './ResultsCount';
+import { UnconnectedSearchResults as SearchResults } from './SearchResults';
 
 describe('pages/search/results/SearchResults', () => {
   const defaultProps = {
+    filters: {
+      date: '2015-10-10',
+      page: 1,
+    },
     isFetching: false,
+    location: {
+      state: {
+        scrollTop: 123,
+      },
+    },
+    onToggleMap: () => {},
+    resultCount: 2,
     searchResultIds: Immutable(['resource-1', 'resource-2']),
+    showMap: false,
   };
 
   function getWrapper(extraProps) {
-    return shallowWithIntl(<SearchResults {...defaultProps} {...extraProps} />);
+    return shallow(<SearchResults {...defaultProps} {...extraProps} />);
   }
 
   describe('rendering', () => {
@@ -40,14 +52,27 @@ describe('pages/search/results/SearchResults', () => {
       const resourceList = getWrapper().find(ResourceList);
       expect(resourceList).to.have.length(1);
       expect(resourceList.props().resourceIds).to.deep.equal(defaultProps.searchResultIds);
+      expect(resourceList.props().date).to.deep.equal(defaultProps.filters.date);
+      expect(resourceList.props().location).to.deep.equal(defaultProps.location);
     });
 
-    it('renders a ResultsCount component with correct props', () => {
-      const resultsCount = getWrapper().find(ResultsCount);
-      expect(resultsCount).to.have.length(1);
-      expect(resultsCount.props()).to.deep.equal({
-        resultIds: defaultProps.searchResultIds,
-        emptyMessage: 'SearchResults.emptyMessage',
+    describe('with showMap', () => {
+      it('does not render ResourceList', () => {
+        const resourceList = getWrapper({ showMap: true }).find(ResourceList);
+        expect(resourceList).to.have.length(0);
+      });
+
+      describe('with selectedUnitId', () => {
+        it('renders a ResourceCompactList', () => {
+          const resourceCompactList = getWrapper({ showMap: true, selectedUnitId: '1' }).find(
+            ResourceCompactList
+          );
+          expect(resourceCompactList).to.have.length(1);
+          expect(resourceCompactList.prop('resourceIds')).to.deep.equal(
+            defaultProps.searchResultIds
+          );
+          expect(resourceCompactList.prop('date')).to.deep.equal(defaultProps.filters.date);
+        });
       });
     });
   });
